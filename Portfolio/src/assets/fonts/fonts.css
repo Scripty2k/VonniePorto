@@ -1,0 +1,35 @@
+@font-face {
+  font-family: 'Bigtimes';
+  src: url('./Bigtimes.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Brisket';
+  src: url('./Brisket.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Romantic';
+  src: url('./romantic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-bigtimes {
+  font-family: 'Bigtimes', sans-serif;
+}
+
+.font-brisket {
+  font-family: 'Brisket', sans-serif;
+}
+
+.font-romantic {
+  font-family: 'Romantic', sans-serif;
+}
