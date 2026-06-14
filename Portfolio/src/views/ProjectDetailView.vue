@@ -4,7 +4,7 @@
       <div class="spinner"></div>
       <p class="mystical-text">Consulting the cards...</p>
     </div>
-    
+
     <div v-else-if="error" class="error-state">
       <p>{{ error }}</p>
       <router-link to="/" class="btn-back">Go back home</router-link>
@@ -15,23 +15,43 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         <span>Back to Cards</span>
       </router-link>
-      
+
       <div class="card-deco-top">✦ ✦ ✦ ✦ ✦</div>
-      
+
       <h1 class="project-title">{{ project.title }}</h1>
       <p class="project-desc">{{ project.description }}</p>
-      
+
       <hr class="card-divider" />
-      
-      <div class="project-content" v-html="formattedContent"></div>
-      
+
+      <!-- Photo gallery (rotated Polaroids) -->
+      <div v-if="project.project_images && project.project_images.length > 0" class="detail-photos">
+        <div
+          v-for="(img, idx) in project.project_images"
+          :key="idx"
+          class="detail-photo"
+          :style="{ transform: `rotate(${photoRotations[idx % photoRotations.length]}deg)` }"
+        >
+          <img :src="img" :alt="'Project photo ' + (idx + 1)" />
+        </div>
+      </div>
+
+      <!-- Rich text content (from Quill HTML) -->
+      <div
+        v-if="project.detailed_content_html"
+        class="project-content ql-snow"
+      >
+        <div class="ql-editor" v-html="project.detailed_content_html"></div>
+      </div>
+      <!-- Fallback: plain text content -->
+      <div v-else-if="project.detailed_content" class="project-content" v-html="formattedContent"></div>
+
       <div v-if="project.link_url" class="project-link-wrapper">
         <a :href="project.link_url" target="_blank" rel="noopener" class="btn-link">
           Explore Live
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         </a>
       </div>
-      
+
       <div class="card-deco-bottom">✦ ✦ ✦ ✦ ✦</div>
     </div>
   </div>
@@ -40,6 +60,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { supabase } from '../supabase.js'
+import 'quill/dist/quill.snow.css'
 
 const props = defineProps({
   id: {
@@ -52,9 +73,10 @@ const project = ref(null)
 const loading = ref(true)
 const error = ref(null)
 
+const photoRotations = [-8, 5, -3, 7, -5, 10, -6, 4]
+
 const formattedContent = computed(() => {
   if (!project.value || !project.value.detailed_content) return ''
-  // Convert newlines to breaks for basic rich text support
   return project.value.detailed_content.replace(/\n/g, '<br>')
 })
 
@@ -81,15 +103,16 @@ onMounted(async () => {
 .detail-container {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
-  background-color: #faf6f0; /* Cream background */
-  padding: 40px 20px;
+  background-color: #faf6f0;
+  padding: 60px 20px;
 }
 
 .loading-state, .error-state {
   text-align: center;
   color: #4a2c2a;
+  margin-top: 120px;
 }
 
 .spinner {
@@ -115,11 +138,11 @@ onMounted(async () => {
 .project-card {
   background-color: #fffdf9;
   border: 2px solid #4a2c2a;
-  border-radius: 12px;
-  max-width: 700px;
+  border-radius: 16px;
+  max-width: 800px;
   width: 100%;
-  padding: 40px;
-  box-shadow: 0 10px 30px rgba(74, 44, 42, 0.08);
+  padding: 48px 44px;
+  box-shadow: 0 16px 48px rgba(74, 44, 42, 0.1);
   position: relative;
 }
 
@@ -141,7 +164,7 @@ onMounted(async () => {
 
 .card-deco-top, .card-deco-bottom {
   text-align: center;
-  color: #c9a063; /* warm gold */
+  color: #c9a063;
   font-size: 1.2rem;
   letter-spacing: 0.3em;
   margin: 15px 0;
@@ -149,7 +172,7 @@ onMounted(async () => {
 
 .project-title {
   font-family: 'Romantic', 'Times New Roman', serif;
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   color: #4a2c2a;
   text-align: center;
   margin-bottom: 10px;
@@ -167,28 +190,86 @@ onMounted(async () => {
   border: 0;
   height: 1px;
   background: linear-gradient(to right, transparent, #c9a063, transparent);
-  margin-bottom: 30px;
+  margin-bottom: 32px;
 }
 
+/* ===== PHOTO GALLERY ===== */
+.detail-photos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 36px;
+  padding: 10px 0;
+}
+
+.detail-photo {
+  width: 140px;
+  background: #fff;
+  border-radius: 3px;
+  padding: 8px 8px 28px;
+  box-shadow:
+    0 4px 20px rgba(74, 34, 30, 0.15),
+    0 1px 3px rgba(0,0,0,0.07);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.detail-photo:hover {
+  box-shadow: 0 10px 30px rgba(74, 34, 30, 0.22);
+  transform: scale(1.05) !important;
+}
+
+.detail-photo img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+}
+
+/* ===== RICH TEXT ===== */
 .project-content {
   color: #2b1f1e;
-  line-height: 1.8;
+  line-height: 1.85;
   font-size: 1.05rem;
   margin-bottom: 35px;
+  border: none !important;
 }
+
+/* Override Quill container borders for clean look */
+.project-content :deep(.ql-editor) {
+  padding: 0;
+  font-family: 'Times New Roman', 'Georgia', serif;
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: #2b1f1e;
+}
+
+.project-content :deep(.ql-editor p) { margin-bottom: 1em; }
+
+.project-content :deep(.ql-editor h1),
+.project-content :deep(.ql-editor h2),
+.project-content :deep(.ql-editor h3) {
+  font-family: 'Romantic', 'Times New Roman', serif;
+  color: #8b263e;
+  margin-bottom: 0.6em;
+}
+
+.project-content :deep(.ql-editor strong) { color: #4a2c2a; }
 
 .project-link-wrapper {
   text-align: center;
+  margin-bottom: 12px;
 }
 
 .btn-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background-color: #8b263e; /* cherry red */
+  background-color: #8b263e;
   color: #ffffff;
-  padding: 12px 28px;
-  border-radius: 6px;
+  padding: 12px 30px;
+  border-radius: 8px;
   text-decoration: none;
   font-weight: 600;
   letter-spacing: 0.05em;

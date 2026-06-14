@@ -34,8 +34,15 @@
 
       <!-- Passport side -->
       <div class="info-passport-wrapper">
-        <div class="passport-frame">
+        <div class="passport-frame" @click="openPopup">
           <div class="passport-glow"></div>
+
+          <!-- Click-me bubble hint -->
+          <div class="click-hint">
+            <span class="click-hint-text">✨ Click me!</span>
+            <div class="click-hint-dot"></div>
+          </div>
+
           <img
             class="info-passport"
             :src="profile.passport_image || defaultPassport"
@@ -48,16 +55,105 @@
         </div>
       </div>
     </div>
+
+    <!-- ===================== FULL-SCREEN POPUP ===================== -->
+    <Teleport to="body">
+      <div class="passport-overlay" :class="{ 'is-open': popupOpen }" @click.self="closePopup">
+        <div class="passport-popup" :class="{ 'is-open': popupOpen }">
+
+          <!-- Close button -->
+          <button class="popup-close-btn" @click="closePopup" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+
+          <!-- Decorative title -->
+          <div class="popup-eyebrow">✦ A Little More About Me ✦</div>
+
+          <!-- Main three-column layout (sketch-style) -->
+          <div class="popup-layout">
+
+            <!-- LEFT photo column -->
+            <div class="popup-photos popup-photos--left">
+              <div
+                v-for="(img, idx) in leftPhotos"
+                :key="'l' + idx"
+                class="popup-photo-card"
+                :style="{ transform: `rotate(${photoRotations[idx % photoRotations.length]}deg)` }"
+              >
+                <img :src="img" :alt="'Photo ' + (idx + 1)" />
+              </div>
+              <!-- Placeholder frames if no images -->
+              <template v-if="leftPhotos.length === 0">
+                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(-8deg)">
+                  <span>📷</span>
+                </div>
+                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(5deg)">
+                  <span>📷</span>
+                </div>
+                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(-3deg)">
+                  <span>📷</span>
+                </div>
+              </template>
+            </div>
+
+            <!-- CENTER text column -->
+            <div class="popup-text-col">
+              <div
+                v-if="profile.popup_content"
+                class="popup-rich-text ql-snow"
+              >
+                <div class="ql-editor" v-html="profile.popup_content"></div>
+              </div>
+              <p v-else class="popup-placeholder-text">
+                Share your story here — add rich text and photos from the admin dashboard.
+              </p>
+            </div>
+
+            <!-- RIGHT photo column -->
+            <div class="popup-photos popup-photos--right">
+              <div
+                v-for="(img, idx) in rightPhotos"
+                :key="'r' + idx"
+                class="popup-photo-card"
+                :style="{ transform: `rotate(${photoRotations[(idx + 3) % photoRotations.length]}deg)` }"
+              >
+                <img :src="img" :alt="'Photo ' + (leftPhotos.length + idx + 1)" />
+              </div>
+              <!-- Placeholder frames if no images -->
+              <template v-if="rightPhotos.length === 0">
+                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(7deg)">
+                  <span>📷</span>
+                </div>
+                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(-4deg)">
+                  <span>📷</span>
+                </div>
+                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(10deg)">
+                  <span>📷</span>
+                </div>
+              </template>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase.js'
 import defaultPassport from '@/assets/images/passport.png'
 
+// Import Quill CSS so rich text renders properly
+import 'quill/dist/quill.snow.css'
+
 const sectionEl = ref(null)
 const isVisible = ref(false)
+const popupOpen = ref(false)
 
 const profile = ref({
   greeting: 'Hi, my name is',
@@ -65,8 +161,33 @@ const profile = ref({
   pronunciation: 'pronounced [Shuh-vohn]',
   bio: 'A short bio blurb about yourself goes here. Talk about your passion, what drives your creative work, and what makes you uniquely you.',
   tags: ['🎨 Design', '💻 Dev', '✨ Creative'],
-  passport_image: null
+  passport_image: null,
+  popup_content: '',
+  popup_images: []
 })
+
+// Rotations array — alternating left & right tilts
+const photoRotations = [-8, 5, -3, 7, -5, 10, -6, 4]
+
+// Split images between left and right columns
+const leftPhotos = computed(() => {
+  const imgs = profile.value.popup_images || []
+  return imgs.filter((_, i) => i % 2 === 0)
+})
+const rightPhotos = computed(() => {
+  const imgs = profile.value.popup_images || []
+  return imgs.filter((_, i) => i % 2 !== 0)
+})
+
+const openPopup = () => {
+  popupOpen.value = true
+  document.body.style.overflow = 'hidden'
+}
+
+const closePopup = () => {
+  popupOpen.value = false
+  document.body.style.overflow = ''
+}
 
 const fetchProfile = async () => {
   try {
@@ -308,6 +429,7 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
 .passport-glow {
@@ -324,6 +446,58 @@ onMounted(async () => {
   to { opacity: 1; transform: scale(1.05); }
 }
 
+/* ===== CLICK ME HINT ===== */
+.click-hint {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  animation: hintBounce 2.2s ease-in-out infinite;
+}
+
+.click-hint-text {
+  background: linear-gradient(135deg, #801424, #c0392b);
+  color: #fff;
+  font-family: 'Brisket', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 5px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(128, 20, 36, 0.35);
+}
+
+.click-hint-text::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #c0392b;
+}
+
+.click-hint-dot {
+  width: 8px;
+  height: 8px;
+  background: #c0392b;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+@keyframes hintBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-6px); }
+}
+
 .info-passport {
   width: clamp(300px, 40vw, 540px);
   height: auto;
@@ -336,14 +510,15 @@ onMounted(async () => {
   animation: passportFloat 5s ease-in-out infinite;
   position: relative;
   z-index: 1;
-  transition: transform 0.4s ease;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
-.info-passport:hover {
+.passport-frame:hover .info-passport {
   transform: rotate(6deg) scale(1.03);
   box-shadow:
     0 30px 80px rgba(74, 34, 30, 0.25),
     0 8px 24px rgba(0, 0, 0, 0.15);
+  animation-play-state: paused;
 }
 
 @keyframes passportFloat {
@@ -374,6 +549,209 @@ onMounted(async () => {
   to { transform: rotate(360deg); }
 }
 
+/* ===== FULL-SCREEN POPUP OVERLAY ===== */
+.passport-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(20, 8, 8, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.passport-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.passport-popup {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  max-height: 90vh;
+  background: linear-gradient(160deg, #fdf6f0 0%, #fef9f5 60%, #fff0e8 100%);
+  border-radius: 20px;
+  border: 1.5px solid rgba(201, 160, 99, 0.3);
+  box-shadow:
+    0 40px 100px rgba(74, 34, 30, 0.35),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
+  overflow: hidden;
+  overflow-y: auto;
+  padding: 48px 40px 52px;
+  transform: scale(0.9) translateY(30px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+}
+
+.passport-popup.is-open {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* Scrollbar styling */
+.passport-popup::-webkit-scrollbar { width: 6px; }
+.passport-popup::-webkit-scrollbar-track { background: transparent; }
+.passport-popup::-webkit-scrollbar-thumb {
+  background: rgba(201, 160, 99, 0.35);
+  border-radius: 3px;
+}
+
+/* Close btn */
+.popup-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(128, 20, 36, 0.2);
+  background: rgba(255,255,255,0.8);
+  color: #801424;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.popup-close-btn:hover {
+  background: #801424;
+  color: #fff;
+  border-color: #801424;
+  transform: rotate(90deg);
+}
+
+.popup-close-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Eyebrow heading */
+.popup-eyebrow {
+  text-align: center;
+  font-family: 'Brisket', serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.3em;
+  color: #c0392b;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+  opacity: 0.75;
+}
+
+/* ===== THREE-COLUMN LAYOUT ===== */
+.popup-layout {
+  display: grid;
+  grid-template-columns: 160px 1fr 160px;
+  gap: 28px;
+  align-items: start;
+  min-height: 400px;
+}
+
+/* Photo columns */
+.popup-photos {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  padding-top: 10px;
+}
+
+.popup-photo-card {
+  width: 130px;
+  background: #fff;
+  border-radius: 4px;
+  padding: 8px 8px 28px;
+  box-shadow:
+    0 4px 20px rgba(74, 34, 30, 0.15),
+    0 1px 3px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: default;
+}
+
+.popup-photo-card:hover {
+  box-shadow: 0 10px 30px rgba(74, 34, 30, 0.22);
+  transform: scale(1.04) !important;
+}
+
+.popup-photo-card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+}
+
+.popup-photo-placeholder {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fdf0e8, #fce4d6);
+  border: 1.5px dashed rgba(201, 160, 99, 0.35);
+}
+
+.popup-photo-placeholder span {
+  font-size: 1.8rem;
+  opacity: 0.4;
+}
+
+/* Text column */
+.popup-text-col {
+  padding: 0 8px;
+}
+
+.popup-rich-text {
+  background: transparent;
+  border: none;
+}
+
+/* Override Quill viewer styles for our design */
+.popup-rich-text :deep(.ql-editor) {
+  padding: 0;
+  font-family: 'Times New Roman', 'Georgia', serif;
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: #3a2020;
+}
+
+.popup-rich-text :deep(.ql-editor p) {
+  margin-bottom: 1em;
+}
+
+.popup-rich-text :deep(.ql-editor h1),
+.popup-rich-text :deep(.ql-editor h2),
+.popup-rich-text :deep(.ql-editor h3) {
+  font-family: 'Romantic', 'Times New Roman', serif;
+  color: #801424;
+  margin-bottom: 0.6em;
+}
+
+.popup-rich-text :deep(.ql-editor strong) {
+  color: #5a1e1e;
+}
+
+.popup-rich-text :deep(.ql-editor em) {
+  color: #7a4040;
+}
+
+.popup-placeholder-text {
+  font-family: 'Times New Roman', serif;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #b08070;
+  font-style: italic;
+  text-align: center;
+  padding: 40px 20px;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
   .info-content {
@@ -389,9 +767,31 @@ onMounted(async () => {
   }
   .info-divider { justify-content: center; }
   .info-badges { justify-content: center; }
+
+  /* Passport popup responsive */
+  .popup-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .popup-photos {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-top: 0;
+  }
+
+  .popup-photo-card {
+    width: 90px;
+  }
+
+  .popup-photos--left { order: 1; }
+  .popup-text-col { order: 2; }
+  .popup-photos--right { order: 3; }
 }
 
 @media (max-width: 480px) {
   .info-section { padding: 60px 20px; }
+  .passport-popup { padding: 40px 16px 40px; }
 }
 </style>

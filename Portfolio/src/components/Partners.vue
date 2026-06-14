@@ -182,7 +182,7 @@ onMounted(async () => {
 }
 
 .marquee-dot {
-  color: #c9a063;
+  color: #250202;
   font-size: 0.7rem;
   animation: dotSpin 4s linear infinite;
   display: inline-block;

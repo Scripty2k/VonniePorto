@@ -7,6 +7,9 @@
           <span class="logo-icon">✦</span>
           <span class="logo-text">Staff Control Panel</span>
         </div>
+        <div>
+          <span class="description-text">ur welcome vonneh :3</span>
+        </div>
       </div>
       
       <nav class="sidebar-nav">
@@ -87,50 +90,40 @@
         
         <!-- ================= TAROT CARDS TAB ================= -->
         <template v-if="currentTab === 'tarot'">
-          <!-- Project Form (Add/Edit) -->
+          <!-- Basic fields + list grid -->
           <section class="form-section">
             <div class="section-card">
               <h2 class="section-title">{{ editingProject ? 'Edit Tarot Card' : 'Create New Tarot Card' }}</h2>
               <form @submit.prevent="saveProject" class="project-form">
                 <div class="form-group">
                   <label for="title">Card Title</label>
-                  <input 
-                    type="text" 
-                    id="title" 
-                    v-model="projectForm.title" 
-                    required 
+                  <input
+                    type="text"
+                    id="title"
+                    v-model="projectForm.title"
+                    required
                     placeholder="e.g. The Hermit / Project Title"
                   />
                 </div>
 
                 <div class="form-group">
                   <label for="description">Card Preview Subtitle (Description)</label>
-                  <input 
-                    type="text" 
-                    id="description" 
-                    v-model="projectForm.description" 
+                  <input
+                    type="text"
+                    id="description"
+                    v-model="projectForm.description"
                     placeholder="Brief 1-2 sentence preview text..."
                   />
                 </div>
 
                 <div class="form-group">
                   <label for="link_url">External Project Link (Optional)</label>
-                  <input 
-                    type="url" 
-                    id="link_url" 
-                    v-model="projectForm.link_url" 
+                  <input
+                    type="url"
+                    id="link_url"
+                    v-model="projectForm.link_url"
                     placeholder="https://example.com/project"
                   />
-                </div>
-
-                <div class="form-group">
-                  <label for="detailed_content">Detailed Content (Full details page)</label>
-                  <textarea 
-                    id="detailed_content" 
-                    v-model="projectForm.detailed_content" 
-                    rows="8" 
-                    placeholder="Detailed description, process, stack used, etc..."
-                  ></textarea>
                 </div>
 
                 <div v-if="notification" :class="['notification-banner', notification.type]">
@@ -141,10 +134,10 @@
                   <button type="submit" :disabled="submittingProject" class="btn-primary">
                     {{ submittingProject ? 'Saving...' : (editingProject ? 'Update Card' : 'Deal Card') }}
                   </button>
-                  <button 
-                    type="button" 
-                    v-if="editingProject" 
-                    @click="cancelEditProject" 
+                  <button
+                    type="button"
+                    v-if="editingProject"
+                    @click="cancelEditProject"
                     class="btn-cancel"
                   >
                     Cancel Edit
@@ -158,7 +151,7 @@
           <section class="list-section">
             <div class="section-card">
               <h2 class="section-title">Active Tarot Deck ({{ projects.length }})</h2>
-              
+
               <div v-if="loadingProjects" class="loading-state">
                 <div class="spinner"></div>
                 <p>Consulting database...</p>
@@ -188,6 +181,66 @@
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ✦ Rich Text Editor Section (full-width) -->
+          <section class="popup-section">
+            <div class="section-card">
+              <h2 class="section-title">✦ Card Detail — Rich Text Content</h2>
+              <p class="section-hint">This appears in the popup when visitors click the card. {{ editingProject ? '(Editing: ' + editingProject.title + ')' : 'Select a card above to edit its content.' }}</p>
+              <div id="tarot-quill-editor" class="quill-editor-wrapper"></div>
+              <div class="form-actions" style="margin-top: 18px;">
+                <button type="button" @click="saveTarotRichContent" :disabled="submittingProject" class="btn-primary">
+                  {{ submittingProject ? 'Saving...' : 'Save Rich Text' }}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ✦ Card Gallery Images Section (full-width) -->
+          <section class="popup-section">
+            <div class="section-card">
+              <h2 class="section-title">✦ Card Detail — Gallery Photos</h2>
+              <p class="section-hint">Photos appear rotated left & right beside the text in the popup. {{ editingProject ? '(Editing: ' + editingProject.title + ')' : 'Select a card to manage its photos.' }}</p>
+
+              <div class="form-group">
+                <label class="btn-secondary upload-label">
+                  <input
+                    type="file"
+                    @change="handleProjectImageUpload"
+                    accept="image/*"
+                    multiple
+                    class="file-input-hidden"
+                  />
+                  + Add Photos (Multiple)
+                </label>
+                <small class="help-text">JPEG/PNG, up to 2MB each.</small>
+              </div>
+
+              <div v-if="projectForm.project_images && projectForm.project_images.length > 0" class="popup-gallery-grid" style="margin-top: 16px;">
+                <div
+                  v-for="(img, idx) in projectForm.project_images"
+                  :key="idx"
+                  class="popup-gallery-item"
+                >
+                  <img :src="img" :alt="'Card photo ' + (idx + 1)" />
+                  <button
+                    type="button"
+                    @click="removeProjectImage(idx)"
+                    class="gallery-item-remove"
+                    aria-label="Remove photo"
+                  >&times;</button>
+                  <span class="gallery-item-badge">{{ idx % 2 === 0 ? 'Left' : 'Right' }}</span>
+                </div>
+              </div>
+              <div v-else class="empty-state"><p>No photos yet for this card.</p></div>
+
+              <div class="form-actions" style="margin-top: 18px;">
+                <button type="button" @click="saveTarotImages" :disabled="submittingProject" class="btn-primary">
+                  {{ submittingProject ? 'Saving...' : 'Save Gallery' }}
+                </button>
               </div>
             </div>
           </section>
@@ -412,6 +465,86 @@
               </div>
             </div>
           </section>
+          <!-- About Popup Content Section -->
+          <section class="list-section popup-section">
+            <div class="section-card">
+              <h2 class="section-title">✦ About Popup — Rich Text Content</h2>
+              <p class="section-hint">This content appears in the full-screen popup when visitors click the passport.</p>
+
+              <div v-if="loadingProfile" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading content...</p>
+              </div>
+
+              <div v-else class="popup-editor-area">
+                <div id="popup-quill-editor" class="quill-editor-wrapper"></div>
+
+                <div class="form-actions" style="margin-top: 18px;">
+                  <button type="button" @click="savePopupContent" :disabled="savingPopup" class="btn-primary">
+                    {{ savingPopup ? 'Saving...' : 'Save Rich Text' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- About Popup — Gallery Images Section -->
+          <section class="list-section popup-section">
+            <div class="section-card">
+              <h2 class="section-title">✦ About Popup — Gallery Photos</h2>
+              <p class="section-hint">Upload multiple pictures. They'll appear rotated on the left and right sides of the popup text.</p>
+
+              <div v-if="loadingProfile" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading gallery...</p>
+              </div>
+
+              <div v-else class="popup-gallery-area">
+                <!-- Upload area -->
+                <div class="form-group">
+                  <label class="btn-secondary upload-label">
+                    <input
+                      type="file"
+                      @change="handlePopupImageUpload"
+                      accept="image/*"
+                      multiple
+                      class="file-input-hidden"
+                    />
+                    + Add Photos (Multiple)
+                  </label>
+                  <small class="help-text">JPEG/PNG, up to 2MB each. Images alternate left/right in the popup.</small>
+                </div>
+
+                <!-- Gallery preview grid -->
+                <div v-if="profileForm.popup_images && profileForm.popup_images.length > 0" class="popup-gallery-grid">
+                  <div
+                    v-for="(img, idx) in profileForm.popup_images"
+                    :key="idx"
+                    class="popup-gallery-item"
+                  >
+                    <img :src="img" :alt="'Gallery photo ' + (idx + 1)" />
+                    <button
+                      type="button"
+                      @click="removePopupImage(idx)"
+                      class="gallery-item-remove"
+                      aria-label="Remove photo"
+                    >×</button>
+                    <span class="gallery-item-badge">{{ idx % 2 === 0 ? 'Left' : 'Right' }}</span>
+                  </div>
+                </div>
+
+                <div v-else class="empty-state">
+                  <p>No gallery photos yet. Upload some above!</p>
+                </div>
+
+                <div class="form-actions" style="margin-top: 18px;">
+                  <button type="button" @click="savePopupImages" :disabled="savingPopup" class="btn-primary">
+                    {{ savingPopup ? 'Saving...' : 'Save Gallery' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
         </template>
 
       </main>
@@ -420,10 +553,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../supabase.js'
 import passportTemplate from '../assets/images/passport.png'
+import Quill from 'quill'
+import 'quill/dist/quill.snow.css'
 
 const router = useRouter()
 const currentTab = ref('tarot')
@@ -437,6 +572,8 @@ const projectForm = ref({
   title: '',
   description: '',
   detailed_content: '',
+  detailed_content_html: '',
+  project_images: [],
   link_url: ''
 })
 
@@ -456,10 +593,90 @@ const profileForm = ref({
   pronunciation: '',
   bio: '',
   tags: '',
-  passport_image: null
+  passport_image: null,
+  popup_content: '',
+  popup_images: []
 })
 const loadingProfile = ref(true)
 const savingProfile = ref(false)
+const savingPopup = ref(false)
+
+// Quill editor instances
+let quillEditor = null       // profile popup editor
+let tarotQuillEditor = null  // tarot card editor
+
+// Initialize profile Quill editor
+const initQuill = async () => {
+  await nextTick()
+  const el = document.getElementById('popup-quill-editor')
+  if (!el || quillEditor) return
+
+  quillEditor = new Quill(el, {
+    theme: 'snow',
+    placeholder: 'Write something beautiful about yourself...',
+    modules: {
+      toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['blockquote'],
+        ['clean']
+      ]
+    }
+  })
+
+  if (profileForm.value.popup_content) {
+    quillEditor.root.innerHTML = profileForm.value.popup_content
+  }
+}
+
+// Initialize tarot card Quill editor
+const initTarotQuill = async () => {
+  await nextTick()
+  const el = document.getElementById('tarot-quill-editor')
+  if (!el) return
+
+  // Destroy existing instance by clearing the element content if re-init
+  if (tarotQuillEditor) {
+    el.innerHTML = ''
+    tarotQuillEditor = null
+  }
+
+  tarotQuillEditor = new Quill(el, {
+    theme: 'snow',
+    placeholder: 'Describe this project — process, tools, story...',
+    modules: {
+      toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['blockquote'],
+        ['clean']
+      ]
+    }
+  })
+
+  if (projectForm.value.detailed_content_html) {
+    tarotQuillEditor.root.innerHTML = projectForm.value.detailed_content_html
+  }
+}
+
+watch(
+  () => currentTab.value,
+  async (tab) => {
+    if (tab === 'profile') {
+      if (!loadingProfile.value) {
+        initQuill()
+      }
+    } else if (tab === 'tarot') {
+      await nextTick()
+      initTarotQuill()
+    } else {
+      quillEditor = null
+      tarotQuillEditor = null
+    }
+  }
+)
 
 const notification = ref(null)
 
@@ -494,8 +711,7 @@ const saveProject = async () => {
   submittingProject.value = true
   try {
     if (editingProject.value) {
-      // Update
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('projects')
         .update({
           title: projectForm.value.title,
@@ -510,17 +726,14 @@ const saveProject = async () => {
       showNotification('Tarot card updated successfully!')
       cancelEditProject()
     } else {
-      // Insert
       const { data, error } = await supabase
         .from('projects')
-        .insert([
-          {
-            title: projectForm.value.title,
-            description: projectForm.value.description,
-            detailed_content: projectForm.value.detailed_content,
-            link_url: projectForm.value.link_url
-          }
-        ])
+        .insert([{
+          title: projectForm.value.title,
+          description: projectForm.value.description,
+          detailed_content: projectForm.value.detailed_content,
+          link_url: projectForm.value.link_url
+        }])
         .select()
 
       if (error) throw error
@@ -536,19 +749,103 @@ const saveProject = async () => {
   }
 }
 
-const startEditProject = (project) => {
+const saveTarotRichContent = async () => {
+  if (!tarotQuillEditor || !editingProject.value) {
+    showNotification('Please select a card from the table above first.', 'error')
+    return
+  }
+  submittingProject.value = true
+  try {
+    const html = tarotQuillEditor.root.innerHTML
+    const { error } = await supabase
+      .from('projects')
+      .update({ detailed_content_html: html })
+      .eq('id', editingProject.value.id)
+    if (error) throw error
+    projectForm.value.detailed_content_html = html
+    showNotification('Card content saved!')
+    await fetchProjects()
+  } catch (err) {
+    console.error('Error saving card content:', err)
+    showNotification('Failed to save: ' + err.message, 'error')
+  } finally {
+    submittingProject.value = false
+  }
+}
+
+const saveTarotImages = async () => {
+  if (!editingProject.value) {
+    showNotification('Please select a card from the table above first.', 'error')
+    return
+  }
+  submittingProject.value = true
+  try {
+    const { error } = await supabase
+      .from('projects')
+      .update({ project_images: projectForm.value.project_images })
+      .eq('id', editingProject.value.id)
+    if (error) throw error
+    showNotification('Gallery saved!')
+    await fetchProjects()
+  } catch (err) {
+    console.error('Error saving images:', err)
+    showNotification('Failed to save gallery: ' + err.message, 'error')
+  } finally {
+    submittingProject.value = false
+  }
+}
+
+const handleProjectImageUpload = (event) => {
+  const files = Array.from(event.target.files)
+  if (!files.length) return
+
+  const maxSize = 2 * 1024 * 1024
+  const validFiles = files.filter(f => {
+    if (f.size > maxSize) {
+      showNotification(`"${f.name}" exceeds 2MB and was skipped.`, 'error')
+      return false
+    }
+    return true
+  })
+
+  validFiles.forEach(file => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      if (!projectForm.value.project_images) projectForm.value.project_images = []
+      projectForm.value.project_images.push(e.target.result)
+    }
+    reader.readAsDataURL(file)
+  })
+
+  event.target.value = ''
+  if (validFiles.length) showNotification(`${validFiles.length} photo(s) added. Click "Save Gallery" to apply!`)
+}
+
+const removeProjectImage = (idx) => {
+  projectForm.value.project_images.splice(idx, 1)
+}
+
+const startEditProject = async (project) => {
   editingProject.value = project
   projectForm.value = {
     title: project.title,
     description: project.description || '',
     detailed_content: project.detailed_content || '',
+    detailed_content_html: project.detailed_content_html || '',
+    project_images: project.project_images || [],
     link_url: project.link_url || ''
   }
+  // Re-init tarot quill with new content
+  await nextTick()
+  initTarotQuill()
 }
 
 const cancelEditProject = () => {
   editingProject.value = null
   resetProjectForm()
+  if (tarotQuillEditor) {
+    tarotQuillEditor.root.innerHTML = ''
+  }
 }
 
 const resetProjectForm = () => {
@@ -556,6 +853,8 @@ const resetProjectForm = () => {
     title: '',
     description: '',
     detailed_content: '',
+    detailed_content_html: '',
+    project_images: [],
     link_url: ''
   }
 }
@@ -703,7 +1002,9 @@ const fetchProfile = async () => {
         pronunciation: 'pronounced [Shuh-vohn]',
         bio: 'A short bio blurb about yourself goes here. Talk about your passion, what drives your creative work, and what makes you uniquely you.',
         tags: '🎨 Design, 💻 Dev, ✨ Creative',
-        passport_image: null
+        passport_image: null,
+        popup_content: '',
+        popup_images: []
       }
     } else if (data) {
       profileForm.value = {
@@ -712,7 +1013,9 @@ const fetchProfile = async () => {
         pronunciation: data.pronunciation || '',
         bio: data.bio || '',
         tags: data.tags ? data.tags.join(', ') : '',
-        passport_image: data.passport_image || null
+        passport_image: data.passport_image || null,
+        popup_content: data.popup_content || '',
+        popup_images: data.popup_images || []
       }
     }
   } catch (err) {
@@ -755,6 +1058,78 @@ const saveProfile = async () => {
   }
 }
 
+const savePopupContent = async () => {
+  if (!quillEditor) return
+  savingPopup.value = true
+  try {
+    const html = quillEditor.root.innerHTML
+    const { error } = await supabase
+      .from('profile')
+      .upsert({
+        id: 1,
+        popup_content: html
+      })
+    if (error) throw error
+    profileForm.value.popup_content = html
+    showNotification('Popup text saved!')
+  } catch (err) {
+    console.error('Error saving popup content:', err)
+    showNotification('Failed to save popup content: ' + err.message, 'error')
+  } finally {
+    savingPopup.value = false
+  }
+}
+
+const savePopupImages = async () => {
+  savingPopup.value = true
+  try {
+    const { error } = await supabase
+      .from('profile')
+      .upsert({
+        id: 1,
+        popup_images: profileForm.value.popup_images
+      })
+    if (error) throw error
+    showNotification('Gallery saved!')
+  } catch (err) {
+    console.error('Error saving popup images:', err)
+    showNotification('Failed to save gallery: ' + err.message, 'error')
+  } finally {
+    savingPopup.value = false
+  }
+}
+
+const handlePopupImageUpload = (event) => {
+  const files = Array.from(event.target.files)
+  if (!files.length) return
+
+  const maxSize = 2 * 1024 * 1024
+  const validFiles = files.filter(f => {
+    if (f.size > maxSize) {
+      showNotification(`"${f.name}" exceeds 2MB and was skipped.`, 'error')
+      return false
+    }
+    return true
+  })
+
+  validFiles.forEach(file => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      if (!profileForm.value.popup_images) profileForm.value.popup_images = []
+      profileForm.value.popup_images.push(e.target.result)
+    }
+    reader.readAsDataURL(file)
+  })
+
+  // Reset input so same files can be re-added if needed
+  event.target.value = ''
+  if (validFiles.length) showNotification(`${validFiles.length} photo(s) added. Click "Save Gallery" to apply!`)
+}
+
+const removePopupImage = (idx) => {
+  profileForm.value.popup_images.splice(idx, 1)
+}
+
 const handleImageUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
@@ -792,7 +1167,11 @@ const handleLogout = async () => {
 onMounted(() => {
   fetchProjects()
   fetchPartners()
-  fetchProfile()
+  fetchProfile().then(() => {
+    if (currentTab.value === 'profile') {
+      initQuill()
+    }
+  })
 })
 </script>
 
@@ -1222,6 +1601,11 @@ onMounted(() => {
   width: 100%;
 }
 
+.description-text {
+  font-size: 20px;
+  color: #9ca3af;
+}
+
 .preview-label {
   font-size: 0.8rem;
   font-weight: 700;
@@ -1326,5 +1710,134 @@ onMounted(() => {
 .btn-reset-photo {
   padding: 11px 20px !important;
   font-size: 0.92rem !important;
+}
+
+/* ===== POPUP CONTENT SECTIONS ===== */
+.popup-section {
+  /* These sections span the full content-body grid so they sit below the 2-col layout */
+  grid-column: 1 / -1;
+}
+
+.section-hint {
+  font-size: 0.82rem;
+  color: #6b7280;
+  font-style: italic;
+  margin: -12px 0 20px;
+}
+
+/* Quill editor override for dark dashboard */
+.quill-editor-wrapper {
+  background-color: #1a1a1a;
+  border: 1px solid #3e3e3e;
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 260px;
+}
+
+/* Override Quill toolbar + editor for dark mode */
+:deep(.ql-toolbar.ql-snow) {
+  border: none;
+  border-bottom: 1px solid #3e3e3e;
+  background: #1e1e1e;
+  padding: 10px 12px;
+}
+
+:deep(.ql-toolbar.ql-snow .ql-stroke) {
+  stroke: #9ca3af;
+}
+
+:deep(.ql-toolbar.ql-snow .ql-fill) {
+  fill: #9ca3af;
+}
+
+:deep(.ql-toolbar.ql-snow .ql-picker-label) {
+  color: #9ca3af;
+}
+
+:deep(.ql-toolbar.ql-snow button:hover .ql-stroke),
+:deep(.ql-toolbar.ql-snow button.ql-active .ql-stroke) {
+  stroke: #c9a063;
+}
+
+:deep(.ql-toolbar.ql-snow .ql-picker-label:hover),
+:deep(.ql-toolbar.ql-snow .ql-picker-label.ql-active) {
+  color: #c9a063;
+}
+
+:deep(.ql-container.ql-snow) {
+  border: none;
+  font-family: 'Times New Roman', serif;
+  font-size: 0.95rem;
+  color: #e5e5e5;
+  min-height: 200px;
+}
+
+:deep(.ql-editor) {
+  min-height: 200px;
+  line-height: 1.75;
+  color: #e5e5e5;
+  padding: 14px 16px;
+}
+
+:deep(.ql-editor.ql-blank::before) {
+  color: #4e4e4e;
+  font-style: italic;
+}
+
+/* Gallery grid */
+.popup-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.popup-gallery-item {
+  position: relative;
+  background: #1a1a1a;
+  border: 1px solid #3e3e3e;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.popup-gallery-item img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-item-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.85);
+  color: #fff;
+  border: none;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.gallery-item-remove:hover {
+  background: #ef4444;
+}
+
+.gallery-item-badge {
+  display: block;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  padding: 4px 0;
 }
 </style>

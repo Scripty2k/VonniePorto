@@ -237,7 +237,7 @@ onMounted(() => {
 
 .social-icon {
   font-size: 1rem;
-  color: #c9a063;
+  color: #350808;
   transition: transform 0.3s ease;
 }
 

@@ -35,7 +35,7 @@
           v-for="(project, index) in projects"
           :key="project.id"
           href="#"
-          @click.prevent="handleCardClick(project.id)"
+          @click.prevent="handleCardClick(project)"
           class="card-container"
           draggable="false"
           :style="{ animationDelay: (index * 0.12) + 's' }"
@@ -72,17 +72,134 @@
     <p class="drag-hint" v-if="projects.length > 0" :class="{ 'visible': cardsVisible }">
       ← drag to explore →
     </p>
+
+    <!-- ===================== FULL-SCREEN CARD POPUP ===================== -->
+    <Teleport to="body">
+      <div class="card-overlay" :class="{ 'is-open': popupOpen }" @click.self="closePopup">
+        <div class="card-popup" :class="{ 'is-open': popupOpen }">
+
+          <!-- Close button -->
+          <button class="card-popup-close" @click="closePopup" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+
+          <template v-if="activeProject">
+            <!-- Eyebrow -->
+            <div class="card-popup-eyebrow">✦ Portfolio ✦</div>
+
+            <!-- Title & subtitle -->
+            <h2 class="card-popup-title">{{ activeProject.title }}</h2>
+            <p class="card-popup-subtitle" v-if="activeProject.description">{{ activeProject.description }}</p>
+
+            <!-- Gold divider -->
+            <div class="card-popup-divider"></div>
+
+            <!-- Three-column layout: photos | text | photos -->
+            <div class="card-popup-layout">
+
+              <!-- LEFT photos -->
+              <div class="card-popup-photos card-popup-photos--left">
+                <div
+                  v-for="(img, idx) in leftPhotos"
+                  :key="'l' + idx"
+                  class="card-popup-photo"
+                  :style="{ transform: `rotate(${photoRotations[idx % photoRotations.length]}deg)` }"
+                >
+                  <img :src="img" :alt="'Photo ' + (idx + 1)" />
+                </div>
+                <template v-if="leftPhotos.length === 0">
+                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(-7deg)"><span>📷</span></div>
+                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(5deg)"><span>📷</span></div>
+                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(-3deg)"><span>📷</span></div>
+                </template>
+              </div>
+
+              <!-- CENTER rich text -->
+              <div class="card-popup-text-col">
+                <div
+                  v-if="activeProject.detailed_content_html"
+                  class="card-popup-rich-text ql-snow"
+                >
+                  <div class="ql-editor" v-html="activeProject.detailed_content_html"></div>
+                </div>
+                <p v-else-if="activeProject.detailed_content" class="card-popup-plain-text">
+                  {{ activeProject.detailed_content }}
+                </p>
+                <p v-else class="card-popup-placeholder">
+                  No details yet — add content from the admin dashboard.
+                </p>
+
+                <!-- Link button -->
+                <div v-if="activeProject.link_url" class="card-popup-link-wrapper">
+                  <a :href="activeProject.link_url" target="_blank" rel="noopener" class="card-popup-link-btn">
+                    Explore Live
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  </a>
+                </div>
+              </div>
+
+              <!-- RIGHT photos -->
+              <div class="card-popup-photos card-popup-photos--right">
+                <div
+                  v-for="(img, idx) in rightPhotos"
+                  :key="'r' + idx"
+                  class="card-popup-photo"
+                  :style="{ transform: `rotate(${photoRotations[(idx + 3) % photoRotations.length]}deg)` }"
+                >
+                  <img :src="img" :alt="'Photo ' + (leftPhotos.length + idx + 1)" />
+                </div>
+                <template v-if="rightPhotos.length === 0">
+                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(8deg)"><span>📷</span></div>
+                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(-5deg)"><span>📷</span></div>
+                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(4deg)"><span>📷</span></div>
+                </template>
+              </div>
+
+            </div>
+          </template>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '../supabase.js'
+import 'quill/dist/quill.snow.css'
 
-const router = useRouter()
 const projects = ref([])
 const loading = ref(true)
+
+// Popup state
+const popupOpen = ref(false)
+const activeProject = ref(null)
+
+const photoRotations = [-8, 5, -3, 7, -5, 10, -6, 4]
+
+const leftPhotos = computed(() => {
+  const imgs = activeProject.value?.project_images || []
+  return imgs.filter((_, i) => i % 2 === 0)
+})
+const rightPhotos = computed(() => {
+  const imgs = activeProject.value?.project_images || []
+  return imgs.filter((_, i) => i % 2 !== 0)
+})
+
+const openPopup = (project) => {
+  activeProject.value = project
+  popupOpen.value = true
+  document.body.style.overflow = 'hidden'
+}
+
+const closePopup = () => {
+  popupOpen.value = false
+  document.body.style.overflow = ''
+  setTimeout(() => { activeProject.value = null }, 400)
+}
 
 // Drag-to-scroll states
 const scrollContainer = ref(null)
@@ -112,8 +229,8 @@ const fetchProjects = async () => {
     console.error('Error fetching projects:', err)
   } finally {
     loading.value = false
-    setTimeout(() => { 
-      cardsVisible.value = true 
+    setTimeout(() => {
+      cardsVisible.value = true
       updateCenterCard()
     }, 200)
   }
@@ -124,7 +241,7 @@ const updateCenterCard = () => {
 
   const container = scrollContainer.value
   const containerMid = container.getBoundingClientRect().left + container.offsetWidth / 2
-  
+
   let closestIndex = 0
   let closestDistance = Infinity
 
@@ -162,7 +279,7 @@ onMounted(() => {
   )
 
   if (sectionEl.value) observer.observe(sectionEl.value)
-  
+
   if (scrollContainer.value) {
     scrollContainer.value.addEventListener('scroll', onScroll)
   }
@@ -206,9 +323,9 @@ const onMouseMove = (e) => {
   }
 }
 
-const handleCardClick = (projectId) => {
+const handleCardClick = (project) => {
   if (isDragging.value) return
-  router.push('/project/' + projectId)
+  openPopup(project)
 }
 </script>
 
@@ -577,5 +694,285 @@ const handleCardClick = (projectId) => {
 
 .drag-hint.visible {
   opacity: 1;
+}
+
+/* ===================== FULL-SCREEN POPUP ===================== */
+.card-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(20, 8, 8, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.card-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.card-popup {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  max-height: 92vh;
+  background: linear-gradient(160deg, #fdf6f0 0%, #fef9f5 60%, #fff0e8 100%);
+  border-radius: 22px;
+  border: 1.5px solid rgba(201, 160, 99, 0.3);
+  box-shadow:
+    0 40px 100px rgba(74, 34, 30, 0.38),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
+  overflow: hidden;
+  overflow-y: auto;
+  padding: 52px 44px 56px;
+  transform: scale(0.88) translateY(36px);
+  opacity: 0;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+}
+
+.card-popup.is-open {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.card-popup::-webkit-scrollbar { width: 6px; }
+.card-popup::-webkit-scrollbar-track { background: transparent; }
+.card-popup::-webkit-scrollbar-thumb {
+  background: rgba(201, 160, 99, 0.35);
+  border-radius: 3px;
+}
+
+/* Close button */
+.card-popup-close {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(128, 20, 36, 0.2);
+  background: rgba(255,255,255,0.85);
+  color: #801424;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.22s ease;
+  z-index: 2;
+}
+
+.card-popup-close:hover {
+  background: #801424;
+  color: #fff;
+  border-color: #801424;
+  transform: rotate(90deg);
+}
+
+.card-popup-close svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Eyebrow */
+.card-popup-eyebrow {
+  text-align: center;
+  font-family: 'Brisket', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.32em;
+  color: #c0392b;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  opacity: 0.7;
+}
+
+/* Title */
+.card-popup-title {
+  font-family: 'Romantic', 'Times New Roman', serif;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  color: #4a2c2a;
+  text-align: center;
+  margin-bottom: 8px;
+  line-height: 1.1;
+}
+
+.card-popup-subtitle {
+  font-size: 1.05rem;
+  color: #6e5452;
+  text-align: center;
+  font-style: italic;
+  margin-bottom: 0;
+}
+
+/* Gold divider */
+.card-popup-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #c9a063, transparent);
+  margin: 22px 0 28px;
+}
+
+/* Three-column layout */
+.card-popup-layout {
+  display: grid;
+  grid-template-columns: 155px 1fr 155px;
+  gap: 28px;
+  align-items: start;
+}
+
+/* Photo columns */
+.card-popup-photos {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  align-items: center;
+  padding-top: 6px;
+}
+
+/* Polaroid-style photo card */
+.card-popup-photo {
+  width: 128px;
+  background: #fff;
+  border-radius: 3px;
+  padding: 8px 8px 28px;
+  box-shadow:
+    0 4px 18px rgba(74, 34, 30, 0.14),
+    0 1px 3px rgba(0,0,0,0.07);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: default;
+}
+
+.card-popup-photo:hover {
+  box-shadow: 0 10px 30px rgba(74, 34, 30, 0.22);
+  transform: scale(1.05) !important;
+}
+
+.card-popup-photo img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+}
+
+.card-popup-photo--placeholder {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fdf0e8, #fce4d6);
+  border: 1.5px dashed rgba(201, 160, 99, 0.35);
+}
+
+.card-popup-photo--placeholder span {
+  font-size: 1.6rem;
+  opacity: 0.38;
+}
+
+/* Text column */
+.card-popup-text-col {
+  padding: 0 6px;
+}
+
+/* Rich text Quill viewer */
+.card-popup-rich-text {
+  background: transparent;
+  border: none;
+}
+
+.card-popup-rich-text :deep(.ql-editor) {
+  padding: 0;
+  font-family: 'Times New Roman', 'Georgia', serif;
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: #3a2020;
+}
+
+.card-popup-rich-text :deep(.ql-editor p) {
+  margin-bottom: 1em;
+}
+
+.card-popup-rich-text :deep(.ql-editor h1),
+.card-popup-rich-text :deep(.ql-editor h2),
+.card-popup-rich-text :deep(.ql-editor h3) {
+  font-family: 'Romantic', 'Times New Roman', serif;
+  color: #801424;
+  margin-bottom: 0.6em;
+}
+
+.card-popup-rich-text :deep(.ql-editor strong) { color: #5a1e1e; }
+.card-popup-rich-text :deep(.ql-editor em) { color: #7a4040; }
+
+.card-popup-plain-text {
+  font-family: 'Times New Roman', serif;
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: #3a2020;
+}
+
+.card-popup-placeholder {
+  font-family: 'Times New Roman', serif;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #b08070;
+  font-style: italic;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* Live link button */
+.card-popup-link-wrapper {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.card-popup-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #801424;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-family: 'Brisket', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: background 0.22s ease, transform 0.22s ease;
+}
+
+.card-popup-link-btn:hover {
+  background: #5e0f1c;
+  transform: translateY(-2px);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 820px) {
+  .card-popup-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .card-popup-photos {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-top: 0;
+  }
+
+  .card-popup-photo {
+    width: 85px;
+  }
+
+  .card-popup-photos--left { order: 1; }
+  .card-popup-text-col   { order: 2; }
+  .card-popup-photos--right { order: 3; }
+
+  .card-popup { padding: 44px 20px 48px; }
 }
 </style>
