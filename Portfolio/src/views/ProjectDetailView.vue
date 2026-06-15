@@ -288,4 +288,41 @@ onMounted(async () => {
   text-decoration: underline;
   font-weight: 600;
 }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .detail-container {
+    padding: 30px 12px;
+  }
+  .project-card {
+    padding: 32px 20px;
+  }
+  .project-title {
+    font-size: 2.1rem;
+  }
+  .project-desc {
+    font-size: 1rem;
+  }
+  .detail-photos {
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .detail-photo {
+    width: 95px;
+    padding: 6px 6px 20px;
+  }
+  .btn-link {
+    padding: 10px 24px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .project-card {
+    padding: 24px 14px;
+  }
+  .project-title {
+    font-size: 1.8rem;
+  }
+}
 </style>

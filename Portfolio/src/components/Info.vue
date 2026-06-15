@@ -39,7 +39,7 @@
 
           <!-- Click-me bubble hint -->
           <div class="click-hint">
-            <span class="click-hint-text">✨ Click me!</span>
+            <span class="click-hint-text">Click me!</span>
             <div class="click-hint-dot"></div>
           </div>
 
@@ -249,7 +249,6 @@ onMounted(async () => {
 .info-blob--1 {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(201, 90, 90, 0.15), transparent);
   top: -100px;
   left: -150px;
   animation: blobDrift1 12s ease-in-out infinite alternate;
@@ -258,7 +257,6 @@ onMounted(async () => {
 .info-blob--2 {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(139, 38, 62, 0.1), transparent);
   bottom: -100px;
   right: -100px;
   animation: blobDrift2 10s ease-in-out infinite alternate;
@@ -341,7 +339,7 @@ onMounted(async () => {
   left: 0;
   width: 0%;
   height: 3px;
-  background: linear-gradient(90deg, #801424, #c0392b, #e8a0a0);
+  background: linear-gradient(90deg, #700b0b, #700b0b, #e9deca);
   border-radius: 2px;
   transition: width 1.2s 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -399,13 +397,13 @@ onMounted(async () => {
 }
 
 .badge {
-  background: rgba(128, 20, 36, 0.08);
+  background: rgba(233, 222, 202);
   border: 1.5px solid rgba(128, 20, 36, 0.18);
   color: #801424;
   padding: 6px 16px;
   border-radius: 20px;
   font-size: 0.88rem;
-  font-family: 'Brisket', sans-serif;
+  font-family: 'Typewriter', sans-serif;
   transition: all 0.3s ease;
   cursor: default;
 }
@@ -449,7 +447,7 @@ onMounted(async () => {
 /* ===== CLICK ME HINT ===== */
 .click-hint {
   position: absolute;
-  top: -28px;
+  top: 0px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -462,13 +460,13 @@ onMounted(async () => {
 }
 
 .click-hint-text {
-  background: linear-gradient(135deg, #801424, #c0392b);
+  background: linear-gradient(135deg, #801424, #912a1f);
   color: #fff;
-  font-family: 'Brisket', sans-serif;
+  font-family: 'Aroma', sans-serif;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  padding: 5px 14px;
+  padding: 10px 24px;
   border-radius: 20px;
   white-space: nowrap;
   box-shadow: 0 4px 14px rgba(128, 20, 36, 0.35);
@@ -499,7 +497,7 @@ onMounted(async () => {
 }
 
 .info-passport {
-  width: clamp(300px, 40vw, 540px);
+  width: clamp(240px, 75vw, 540px);
   height: auto;
   transform: rotate(12deg);
   border-radius: 12px;
@@ -757,6 +755,7 @@ onMounted(async () => {
   .info-content {
     flex-direction: column;
     text-align: center;
+    gap: 3rem;
   }
   .info-text {
     max-width: 100%;
@@ -772,6 +771,7 @@ onMounted(async () => {
   .popup-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
+    gap: 20px;
   }
 
   .popup-photos {
@@ -779,10 +779,12 @@ onMounted(async () => {
     flex-wrap: wrap;
     justify-content: center;
     padding-top: 0;
+    gap: 12px;
   }
 
   .popup-photo-card {
     width: 90px;
+    padding: 6px 6px 20px;
   }
 
   .popup-photos--left { order: 1; }
@@ -793,5 +795,24 @@ onMounted(async () => {
 @media (max-width: 480px) {
   .info-section { padding: 60px 20px; }
   .passport-popup { padding: 40px 16px 40px; }
+  .info-passport {
+    width: clamp(220px, 80vw, 300px);
+    transform: rotate(6deg) !important;
+    animation: passportFloatMobile 5s ease-in-out infinite !important;
+  }
+  .passport-frame:hover .info-passport {
+    transform: rotate(3deg) scale(1.02) !important;
+  }
+  .popup-close-btn {
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@keyframes passportFloatMobile {
+  0%, 100% { transform: rotate(6deg) translateY(0px); }
+  50% { transform: rotate(6deg) translateY(-10px); }
 }
 </style>

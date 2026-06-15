@@ -137,12 +137,12 @@ onMounted(async () => {
 
 .partners-marquee-wrapper::before {
   left: 0;
-  background: linear-gradient(90deg, rgba(255, 200, 180, 1), transparent);
+  background: linear-gradient(90deg, rgb(74, 44, 42, 0.10), transparent);
 }
 
 .partners-marquee-wrapper::after {
   right: 0;
-  background: linear-gradient(270deg, rgba(255, 200, 180, 1), transparent);
+  background: linear-gradient(270deg, rgb(74, 44, 42, 0.10), transparent);
 }
 
 .partners-marquee {
@@ -170,7 +170,7 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   padding: 0 28px;
-  font-family: 'Brisket', sans-serif;
+  font-family: 'Aroma';
   font-size: 1.15rem;
   color: #5a3535;
   white-space: nowrap;

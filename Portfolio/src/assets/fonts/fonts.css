@@ -22,6 +22,30 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Typewriter';
+  src: url('./Typewriter.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aroma';
+  src: url('./Aroma.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Coolvetica';
+  src: url('./Coolvetica.rg.ttf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 .font-bigtimes {
   font-family: 'Bigtimes', sans-serif;
 }
@@ -32,4 +56,16 @@
 
 .font-romantic {
   font-family: 'Romantic', sans-serif;
+}
+
+.font-typewriter {
+  font-family: 'Typewriter', sans-serif;
+}
+
+.font-aroma {
+  font-family: 'Aroma', sans-serif;
+}
+
+.font-coolvetica {
+  font-family: 'Coolvetica', sans-serif;
 }

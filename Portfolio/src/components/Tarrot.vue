@@ -380,7 +380,7 @@ const handleCardClick = (project) => {
 .section-desc {
   font-size: 1rem;
   color: #6e5452;
-  font-style: italic;
+  font-family: 'Coolvetica', sans-serif;
 }
 
 /* ===== LOADING ===== */
@@ -527,27 +527,21 @@ const handleCardClick = (project) => {
   opacity: 1;
 }
 
-.card-container:hover {
-  transform: translateY(-8px) !important;
-}
-
 /* ===== CARD INNER ===== */
 .card-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease;
   transform-style: preserve-3d;
   -webkit-user-drag: none;
   user-drag: none;
   user-select: none;
   border-radius: 14px;
-  box-shadow: 0 8px 30px rgba(139, 38, 62, 0.18), 0 2px 8px rgba(0,0,0,0.12);
 }
 
 .card-container:hover .card-inner {
   transform: rotateY(180deg);
-  box-shadow: 0 20px 50px rgba(139, 38, 62, 0.35), 0 4px 16px rgba(0,0,0,0.2);
 }
 
 /* ===== BACK & FRONT ===== */
@@ -576,7 +570,6 @@ const handleCardClick = (project) => {
 .card-back-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, transparent 60%, rgba(60, 10, 20, 0.3) 100%);
   pointer-events: none;
 }
 
@@ -630,7 +623,7 @@ const handleCardClick = (project) => {
 }
 
 .card-title {
-  font-family: 'Romantic', 'Times New Roman', serif;
+  font-family: 'Aroma', sans-serif;
   font-size: 1.4rem;
   color: #4a2c2a;
   margin: 8px 0 6px;
@@ -726,9 +719,6 @@ const handleCardClick = (project) => {
   background: linear-gradient(160deg, #fdf6f0 0%, #fef9f5 60%, #fff0e8 100%);
   border-radius: 22px;
   border: 1.5px solid rgba(201, 160, 99, 0.3);
-  box-shadow:
-    0 40px 100px rgba(74, 34, 30, 0.38),
-    0 0 0 1px rgba(255,255,255,0.6) inset;
   overflow: hidden;
   overflow-y: auto;
   padding: 52px 44px 56px;
@@ -840,9 +830,6 @@ const handleCardClick = (project) => {
   background: #fff;
   border-radius: 3px;
   padding: 8px 8px 28px;
-  box-shadow:
-    0 4px 18px rgba(74, 34, 30, 0.14),
-    0 1px 3px rgba(0,0,0,0.07);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: default;
 }
@@ -956,6 +943,7 @@ const handleCardClick = (project) => {
 @media (max-width: 820px) {
   .card-popup-layout {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 
   .card-popup-photos {
@@ -963,16 +951,66 @@ const handleCardClick = (project) => {
     flex-wrap: wrap;
     justify-content: center;
     padding-top: 0;
+    gap: 12px;
   }
 
   .card-popup-photo {
-    width: 85px;
+    width: 95px;
+    padding: 6px 6px 20px;
   }
 
   .card-popup-photos--left { order: 1; }
   .card-popup-text-col   { order: 2; }
   .card-popup-photos--right { order: 3; }
 
-  .card-popup { padding: 44px 20px 48px; }
+  .card-popup { padding: 48px 18px 40px; }
+}
+
+@media (max-width: 768px) {
+  .tarot-section {
+    padding: 60px 0 40px;
+  }
+  .section-subtitle {
+    font-size: 2.2rem;
+  }
+  .tarot-grid {
+    justify-content: flex-start;
+    scroll-snap-type: x mandatory;
+    padding: 20px 0 10px;
+  }
+  .tarot-track {
+    gap: 20px;
+    padding: 20px 30px 30px;
+  }
+  .card-container {
+    flex: 0 0 220px;
+    width: 220px;
+    height: 366px;
+    scroll-snap-align: center;
+  }
+  .card-front {
+    padding: 16px 14px;
+  }
+  .card-title {
+    font-size: 1.25rem;
+  }
+  .card-desc {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-subtitle {
+    font-size: 1.8rem;
+  }
+  .card-popup {
+    max-height: 95vh;
+  }
+  .card-popup-close {
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+  }
 }
 </style>

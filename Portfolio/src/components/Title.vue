@@ -14,10 +14,14 @@
       <img src="../assets/images/cherry.png" alt="Cherry Sticker" class="sticker sticker-cherry" />
 
       <h1 class="main-title">
-        <span v-for="(char, ci) in titleChars" :key="ci"
-          class="title-char"
-          :style="{ animationDelay: (ci * 0.06) + 's' }"
-        >{{ char === ' ' ? '\u00A0' : char }}</span>
+        <span v-for="(word, wi) in titleWords" :key="wi" class="title-word">
+          <span v-for="charObj in word.chars" :key="charObj.index"
+            class="title-char"
+            :style="{ animationDelay: (charObj.index * 0.06) + 's' }"
+          >{{ charObj.char }}</span>
+          <!-- Animated non-breaking space if not last word -->
+          <span v-if="!word.isLast" class="title-char" :style="{ animationDelay: ((word.chars[word.chars.length - 1].index + 1) * 0.06) + 's' }">&nbsp;</span>
+        </span>
       </h1>
 
       <img src="../assets/images/star.png" alt="Star Top Sticker" class="sticker sticker-star-top" />
@@ -50,7 +54,27 @@ const displayedMotto = ref('')
 const typing = ref(true)
 const motto = 'Random motto here...'
 
-const titleChars = computed(() => props.title.split(''))
+const titleWords = computed(() => {
+  const words = props.title.split(' ')
+  let globalCharIndex = 0
+  return words.map((word, wordIndex) => {
+    const chars = word.split('').map(char => {
+      const charObj = {
+        char,
+        index: globalCharIndex
+      }
+      globalCharIndex++
+      return charObj
+    })
+    if (wordIndex < words.length - 1) {
+      globalCharIndex++ // account for space delay
+    }
+    return {
+      chars,
+      isLast: wordIndex === words.length - 1
+    }
+  })
+})
 
 const typeWriter = async () => {
   await new Promise(r => setTimeout(r, 800))
@@ -103,7 +127,12 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   padding: 120px 20px 100px;
-  overflow: visible;
+  overflow: hidden; /* Prevent horizontal scroll from absolute stickers */
+}
+
+.title-word {
+  display: inline-block;
+  white-space: nowrap;
 }
 
 /* ===== SPARKLES ===== */
@@ -214,7 +243,7 @@ onMounted(() => {
 
 /* ===== SUBTITLE ===== */
 .subtitle {
-  font-family: 'Times New Roman', serif;
+  font-family: 'Typewriter', serif;
   font-size: 26px;
   font-style: italic;
   color: #2b1f1e;
@@ -291,6 +320,8 @@ onMounted(() => {
   left: -50px;
   top: -50px;
   animation: bow-idle 4s ease-in-out infinite;
+  user-select: none;
+  pointer-events: none;
 }
 
 .sticker-bow:hover {
@@ -302,6 +333,8 @@ onMounted(() => {
   left: -60px;
   bottom: -20px;
   animation: cherry-idle 4.5s ease-in-out infinite;
+  user-select: none;
+  pointer-events: none;
 }
 
 .sticker-cherry:hover {
@@ -313,6 +346,8 @@ onMounted(() => {
   right: -30px;
   top: -15px;
   animation: star-top-idle 3.5s ease-in-out infinite;
+  user-select: none;
+  pointer-events: none;
 }
 
 .sticker-star-top:hover {
@@ -324,6 +359,8 @@ onMounted(() => {
   right: -55px;
   bottom: 0px;
   animation: star-bottom-idle 5s ease-in-out infinite;
+  user-select: none;
+  pointer-events: none;
 }
 
 .sticker-star-bottom:hover {

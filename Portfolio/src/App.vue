@@ -28,7 +28,32 @@
         <span class="nav-btn-shimmer"></span>
       </button>
     </nav>
+
+    <!-- Hamburger Button for Mobile -->
+    <button class="hamburger-btn" @click="toggleMobileMenu" :class="{ 'is-active': mobileMenuOpen }" aria-label="Menu">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
   </header>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-menu-overlay" :class="{ 'is-open': mobileMenuOpen && showPublicHeader }">
+    <nav class="mobile-nav-links">
+      <button class="mobile-nav-btn" @click="scrollToSection('home')">
+        <span class="mobile-nav-btn-text">Home</span>
+      </button>
+      <button class="mobile-nav-btn" @click="scrollToSection('work')">
+        <span class="mobile-nav-btn-text">Work</span>
+      </button>
+      <button class="mobile-nav-btn" @click="scrollToSection('about')">
+        <span class="mobile-nav-btn-text">About Me</span>
+      </button>
+      <button class="mobile-nav-btn" @click="scrollToSection('contact')">
+        <span class="mobile-nav-btn-text">Contact</span>
+      </button>
+    </nav>
+  </div>
 
   <div id="app">
     <router-view />
@@ -80,9 +105,14 @@ const route = useRoute()
 const router = useRouter()
 const isScrolled = ref(false)
 const isCvOpen = ref(false)
+const mobileMenuOpen = ref(false)
 
 const toggleCv = () => {
   isCvOpen.value = !isCvOpen.value
+}
+
+const toggleMobileMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value
 }
 
 const showPublicHeader = computed(() => {
@@ -94,10 +124,12 @@ const handleScroll = () => {
 }
 
 const scrollToTop = () => {
+  mobileMenuOpen.value = false
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const scrollToSection = (sectionId) => {
+  mobileMenuOpen.value = false
   // If not on home page, navigate first then scroll
   if (route.path !== '/') {
     router.push('/').then(() => {
@@ -138,7 +170,7 @@ html {
 
 body {
   font-family: 'Brisket', sans-serif;
-  background-color: #ffa8a8;
+  background-color: #9e7a73;
   overflow-x: hidden;
 }
 
@@ -160,7 +192,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 18px 40px;
-  background: rgba(255, 200, 200, 0.35);
+  background: rgba(233, 222, 202, 0.45);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.45);
@@ -170,8 +202,8 @@ body {
 
 .site-header.scrolled {
   padding: 10px 40px;
-  background: rgba(255, 180, 180, 0.6);
-  box-shadow: 0 8px 32px rgba(122, 28, 28, 0.18);
+  background: rgba(233, 222, 202, 0.95);
+  box-shadow: 0 8px 32px rgba(53, 22, 23, 0.18);
 }
 
 /* Animated shimmer sweep across header */
@@ -226,7 +258,7 @@ body {
   position: absolute;
   inset: -8px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 120, 120, 0.5) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(233, 222, 202, 0.6) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -251,15 +283,15 @@ body {
   position: relative;
   overflow: hidden;
   text-decoration: none;
-  color: #7a1c1c;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  color: #351617;
+  background: rgba(233, 222, 202, 0.85);
+  border: 1.5px solid rgba(233, 222, 202, 0.95);
   padding: 10px 22px;
   font-size: 15px;
   font-family: 'Brisket', sans-serif;
   font-weight: 600;
   border-radius: 30px;
-  box-shadow: 0 4px 12px rgba(122, 28, 28, 0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+  box-shadow: 0 4px 12px rgba(53, 22, 23, 0.12), inset 0 1px 0 rgba(255,255,255,0.8);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   letter-spacing: 0.02em;
@@ -276,7 +308,7 @@ body {
 .nav-btn-shimmer {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #7a1c1c 0%, #c0392b 50%, #7a1c1c 100%);
+  background: linear-gradient(135deg, #351617 0%, #801424 50%, #351617 100%);
   background-size: 200% 200%;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -300,7 +332,7 @@ body {
 
 .nav-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(122, 28, 28, 0.28);
+  box-shadow: 0 10px 24px rgba(53, 22, 23, 0.28);
   border-color: transparent;
 }
 
@@ -338,12 +370,12 @@ body {
 
 /* Global text selection styles */
 ::selection {
-  background-color: #7a1c1c;
+  background-color: #351617;
   color: #ffffff;
 }
 
 ::-moz-selection {
-  background-color: #7a1c1c;
+  background-color: #351617;
   color: #ffffff;
 }
 
@@ -360,13 +392,13 @@ body {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #8b263e 0%, #c0392b 100%);
+  background: linear-gradient(135deg, #351617 0%, #801424 100%);
   color: #ffffff;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 16px rgba(139, 38, 62, 0.35);
+  box-shadow: 0 4px 16px rgba(53, 22, 23, 0.35);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: visible;
@@ -375,8 +407,8 @@ body {
 
 .cv-floating-btn:hover {
   transform: scale(1.1) translateY(-2px);
-  box-shadow: 0 8px 24px rgba(139, 38, 62, 0.5);
-  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+  box-shadow: 0 8px 24px rgba(53, 22, 23, 0.5);
+  background: linear-gradient(135deg, #801424 0%, #a83232 100%);
 }
 
 .cv-floating-btn:active {
@@ -523,6 +555,98 @@ body {
     bottom: 85px;
     width: calc(100vw - 40px);
     height: 65vh;
+  }
+}
+
+/* ===== MOBILE NAVIGATION ===== */
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 28px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1010;
+  position: relative;
+}
+
+.hamburger-line {
+  width: 100%;
+  height: 2.5px;
+  background-color: #351617;
+  border-radius: 2px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.hamburger-btn.is-active .hamburger-line:nth-child(1) {
+  transform: translateY(9px) rotate(45deg);
+}
+
+.hamburger-btn.is-active .hamburger-line:nth-child(2) {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.hamburger-btn.is-active .hamburger-line:nth-child(3) {
+  transform: translateY(-9px) rotate(-45deg);
+}
+
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(233, 222, 202, 0.98);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  z-index: 1005;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.mobile-menu-overlay.is-open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-nav-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.mobile-nav-btn {
+  background: transparent;
+  border: none;
+  font-family: 'Brisket', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: #351617;
+  cursor: pointer;
+  transition: transform 0.3s ease, color 0.3s ease;
+  padding: 8px 20px;
+}
+
+.mobile-nav-btn:hover, .mobile-nav-btn:active {
+  transform: scale(1.1);
+  color: #801424;
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+  .hamburger-btn {
+    display: flex;
   }
 }
 </style>

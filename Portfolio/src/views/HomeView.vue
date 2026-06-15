@@ -65,7 +65,7 @@ const getParticleStyle = (i) => {
   align-items: center;
   width: 100%;
   min-height: 100vh;
-  background: linear-gradient(160deg, #ffe0e0 0%, #ffd0c8 30%, #ffc8b8 60%, #ffb8a8 100%);
+  background: linear-gradient(160deg, #e9deca 0%, #e9deca 30%, #e9deca 60%, #e9deca 100%);
   padding-top: 100px; /* offset for fixed header */
   overflow-x: hidden;
 }
@@ -75,9 +75,9 @@ const getParticleStyle = (i) => {
   position: fixed;
   inset: 0;
   background: 
-    radial-gradient(ellipse at 20% 20%, rgba(255, 100, 100, 0.12) 0%, transparent 55%),
-    radial-gradient(ellipse at 80% 80%, rgba(200, 50, 80, 0.1) 0%, transparent 55%),
-    radial-gradient(ellipse at 50% 50%, rgba(255, 200, 180, 0.08) 0%, transparent 65%);
+    radial-gradient(ellipse at 20% 20%, rgba(53, 22, 23, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 80%, rgba(139, 38, 62, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(233, 222, 202, 0.12) 0%, transparent 65%);
   pointer-events: none;
   z-index: 0;
   animation: overlayPulse 8s ease-in-out infinite alternate;
@@ -109,7 +109,7 @@ const getParticleStyle = (i) => {
   position: absolute;
   bottom: -20px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(180, 30, 50, 0.6) 0%, rgba(255, 120, 120, 0.3) 60%, transparent 100%);
+  background: radial-gradient(circle, rgba(53, 22, 23, 0.5) 0%, rgba(233, 222, 202, 0.25) 60%, transparent 100%);
   animation: particleRise linear infinite;
   filter: blur(1px);
 }

@@ -1,7 +1,10 @@
 <template>
-  <div class="dashboard-layout">
+  <div class="dashboard-layout" :class="{ 'sidebar-open': sidebarOpen }">
+    <!-- Backdrop Overlay for Mobile -->
+    <div v-if="sidebarOpen" class="sidebar-backdrop" @click="closeSidebar"></div>
+
     <!-- Supabase-style Sidebar -->
-    <aside class="dashboard-sidebar">
+    <aside class="dashboard-sidebar" :class="{ 'is-open': sidebarOpen }">
       <div class="sidebar-header">
         <div class="logo-area">
           <span class="logo-icon">✦</span>
@@ -14,7 +17,7 @@
       
       <nav class="sidebar-nav">
         <button 
-          @click="currentTab = 'tarot'" 
+          @click="currentTab = 'tarot'; closeSidebar()" 
           :class="['nav-item', { active: currentTab === 'tarot' }]"
         >
           <!-- Tarot Cards SVG Icon -->
@@ -26,7 +29,7 @@
         </button>
         
         <button 
-          @click="currentTab = 'partners'" 
+          @click="currentTab = 'partners'; closeSidebar()" 
           :class="['nav-item', { active: currentTab === 'partners' }]"
         >
           <!-- Partners/Collaborators SVG Icon -->
@@ -40,7 +43,7 @@
         </button>
 
         <button 
-          @click="currentTab = 'profile'" 
+          @click="currentTab = 'profile'; closeSidebar()" 
           :class="['nav-item', { active: currentTab === 'profile' }]"
         >
           <!-- Profile/User SVG Icon -->
@@ -73,6 +76,21 @@
 
     <!-- Main Content Area -->
     <div class="dashboard-content">
+      <!-- Mobile header top bar -->
+      <div class="mobile-top-bar">
+        <button class="mobile-menu-btn" @click="toggleSidebar" aria-label="Toggle Menu">
+          <svg class="mobile-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div class="mobile-logo-area">
+          <span class="logo-icon">✦</span>
+          <span class="logo-text">Staff Admin</span>
+        </div>
+      </div>
+
       <header class="content-header">
         <h1 class="content-title">
           <span v-if="currentTab === 'tarot'">Tarot Cards Deck</span>
@@ -562,6 +580,15 @@ import 'quill/dist/quill.snow.css'
 
 const router = useRouter()
 const currentTab = ref('tarot')
+const sidebarOpen = ref(false)
+
+const toggleSidebar = () => {
+  sidebarOpen.value = !sidebarOpen.value
+}
+
+const closeSidebar = () => {
+  sidebarOpen.value = false
+}
 
 // Tarot Card States
 const projects = ref([])
@@ -609,7 +636,22 @@ let tarotQuillEditor = null  // tarot card editor
 const initQuill = async () => {
   await nextTick()
   const el = document.getElementById('popup-quill-editor')
-  if (!el || quillEditor) return
+  if (!el) return
+
+  // If already initialized and attached to the DOM, just update content and return
+  if (quillEditor && document.body.contains(quillEditor.root)) {
+    if (profileForm.value.popup_content) {
+      quillEditor.root.innerHTML = profileForm.value.popup_content
+    }
+    return
+  }
+
+  // Clear any leftover elements inside the container
+  el.innerHTML = ''
+
+  // Clean up any leftover sibling toolbar elements
+  const siblingToolbars = el.parentNode.querySelectorAll('.ql-toolbar')
+  siblingToolbars.forEach(tb => tb.remove())
 
   quillEditor = new Quill(el, {
     theme: 'snow',
@@ -636,11 +678,18 @@ const initTarotQuill = async () => {
   const el = document.getElementById('tarot-quill-editor')
   if (!el) return
 
-  // Destroy existing instance by clearing the element content if re-init
-  if (tarotQuillEditor) {
-    el.innerHTML = ''
-    tarotQuillEditor = null
+  // If already initialized and attached to the DOM, just update content and return
+  if (tarotQuillEditor && document.body.contains(tarotQuillEditor.root)) {
+    tarotQuillEditor.root.innerHTML = projectForm.value.detailed_content_html || ''
+    return
   }
+
+  // Clear any leftover elements inside the container
+  el.innerHTML = ''
+
+  // Clean up any leftover sibling toolbar elements
+  const siblingToolbars = el.parentNode.querySelectorAll('.ql-toolbar')
+  siblingToolbars.forEach(tb => tb.remove())
 
   tarotQuillEditor = new Quill(el, {
     theme: 'snow',
@@ -665,10 +714,12 @@ watch(
   () => currentTab.value,
   async (tab) => {
     if (tab === 'profile') {
+      tarotQuillEditor = null
       if (!loadingProfile.value) {
         initQuill()
       }
     } else if (tab === 'tarot') {
+      quillEditor = null
       await nextTick()
       initTarotQuill()
     } else {
@@ -1839,5 +1890,125 @@ onMounted(() => {
   letter-spacing: 0.06em;
   color: #6b7280;
   padding: 4px 0;
+}
+
+/* ===== RESPONSIVE ADMIN DASHBOARD ===== */
+.mobile-top-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background-color: #121212;
+    border-bottom: 1px solid #2e2e2e;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  .mobile-menu-btn {
+    background: none;
+    border: none;
+    color: #e5e5e5;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-menu-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .mobile-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 1rem;
+  }
+
+  .dashboard-layout {
+    flex-direction: column;
+  }
+
+  .dashboard-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1100;
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .dashboard-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 1050;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .content-header {
+    padding: 20px 16px;
+  }
+
+  .content-title {
+    font-size: 1.35rem;
+  }
+
+  .content-body {
+    grid-template-columns: 1fr;
+    padding: 20px 16px;
+    gap: 24px;
+  }
+
+  .section-card {
+    padding: 16px;
+  }
+
+  /* Table tweaks on mobile */
+  .projects-table th, 
+  .projects-table td {
+    padding: 12px 10px;
+    font-size: 0.85rem;
+  }
+  
+  .col-desc {
+    max-width: 140px;
+  }
+
+  /* Form spacing improvements */
+  .form-actions {
+    flex-wrap: wrap;
+  }
+  
+  .form-actions button {
+    flex-grow: 1;
+  }
+
+  /* Passport Graphic Preview Mobile Layout */
+  .passport-manager-content {
+    gap: 16px;
+  }
+
+  .passport-preview-frame {
+    max-width: 180px;
+  }
 }
 </style>

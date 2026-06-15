@@ -89,7 +89,6 @@ onMounted(() => {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(128, 20, 36, 0.06) 50%, rgba(128, 20, 36, 0.04) 100%);
   pointer-events: none;
 }
 
@@ -276,7 +275,7 @@ onMounted(() => {
 }
 
 .footer-icon {
-  color: #c9a063;
+  color: #360b0b;
   font-size: 0.8rem;
   flex: 0;
   animation: divIconSpin 8s linear infinite;
@@ -292,5 +291,33 @@ onMounted(() => {
   letter-spacing: 0.1em;
   font-family: 'Times New Roman', serif;
   font-style: italic;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .contact-deco--star1 { left: 4%; font-size: 1rem; }
+  .contact-deco--star2 { right: 4%; font-size: 1.2rem; }
+  .contact-deco--star3 { left: 10%; font-size: 0.8rem; }
+}
+
+@media (max-width: 600px) {
+  .contact-section {
+    padding: 60px 20px;
+  }
+  .contact-sub {
+    font-size: 1rem;
+    margin-bottom: 32px;
+  }
+  .contact-email-btn {
+    padding: 14px 32px;
+    font-size: 1rem;
+  }
+  .contact-socials {
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+  .social-dot {
+    display: none;
+  }
 }
 </style>
