@@ -371,7 +371,7 @@ onMounted(async () => {
 }
 
 .divider-icon {
-  color: #c9a063;
+  color: #4b1111;
   font-size: 0.85rem;
   animation: divIconSpin 6s linear infinite;
 }

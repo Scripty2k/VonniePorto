@@ -8,10 +8,10 @@
       <div class="sidebar-header">
         <div class="logo-area">
           <span class="logo-icon">✦</span>
-          <span class="logo-text">Staff Control Panel</span>
+          <span class="logo-text">Vonnie Admin Panel</span>
         </div>
         <div>
-          <span class="description-text">ur welcome vonneh :3</span>
+          <span class="description-text">{{ welcomeText }}</span>
         </div>
       </div>
       
@@ -40,6 +40,21 @@
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
           <span>Partners</span>
+        </button>
+
+        <button 
+          @click="currentTab = 'socials'; closeSidebar()" 
+          :class="['nav-item', { active: currentTab === 'socials' }]"
+        >
+          <!-- Socials/Share SVG Icon -->
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+          <span>Socials</span>
         </button>
 
         <button 
@@ -95,11 +110,13 @@
         <h1 class="content-title">
           <span v-if="currentTab === 'tarot'">Tarot Cards Deck</span>
           <span v-else-if="currentTab === 'partners'">Partners & Collaborators</span>
+          <span v-else-if="currentTab === 'socials'">Social Links</span>
           <span v-else-if="currentTab === 'profile'">Profile Info (About Me)</span>
         </h1>
         <p class="content-subtitle">
           <span v-if="currentTab === 'tarot'">Configure the dynamic portfolio entries for cards of fate.</span>
           <span v-else-if="currentTab === 'partners'">Manage partner names for the homepage marquee.</span>
+          <span v-else-if="currentTab === 'socials'">Manage social media links that appear in the Contact section.</span>
           <span v-else-if="currentTab === 'profile'">Edit your bio, professional tags, greeting, and replace or download the passport photo template.</span>
         </p>
       </header>
@@ -331,6 +348,123 @@
                       <td class="col-actions">
                         <button @click="startEditPartner(partner)" class="btn-action edit">Edit</button>
                         <button @click="deletePartner(partner.id)" class="btn-action delete">Delete</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </template>
+
+        <!-- ================= SOCIALS TAB ================= -->
+        <template v-else-if="currentTab === 'socials'">
+          <!-- Social Link Form (Add/Edit) -->
+          <section class="form-section">
+            <div class="section-card">
+              <h2 class="section-title">{{ editingSocial ? 'Edit Social Link' : 'Add New Social Link' }}</h2>
+              <form @submit.prevent="saveSocial" class="project-form">
+                <div class="form-group">
+                  <label for="social-platform">Platform Name</label>
+                  <input 
+                    type="text" 
+                    id="social-platform" 
+                    v-model="socialForm.platform" 
+                    required 
+                    placeholder="e.g. Instagram, LinkedIn, Twitter"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="social-url">URL</label>
+                  <input 
+                    type="url" 
+                    id="social-url" 
+                    v-model="socialForm.url" 
+                    required 
+                    placeholder="https://instagram.com/yourhandle"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="social-icon">Decorative Icon</label>
+                  <input 
+                    type="text" 
+                    id="social-icon" 
+                    v-model="socialForm.icon" 
+                    placeholder="♡ ◈ ✦ ★ ✿ ♪"
+                  />
+                  <small class="help-text">A single character or emoji displayed beside the platform name. E.g. ♡ for Instagram.</small>
+                </div>
+
+                <div class="form-group">
+                  <label for="social-order">Sort Order</label>
+                  <input 
+                    type="number" 
+                    id="social-order" 
+                    v-model.number="socialForm.sort_order" 
+                    placeholder="0"
+                  />
+                  <small class="help-text">Lower numbers appear first in the contact section.</small>
+                </div>
+
+                <div v-if="notification" :class="['notification-banner', notification.type]">
+                  {{ notification.text }}
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" :disabled="submittingSocial" class="btn-primary">
+                    {{ submittingSocial ? 'Saving...' : (editingSocial ? 'Update Social' : 'Add Social') }}
+                  </button>
+                  <button 
+                    type="button" 
+                    v-if="editingSocial" 
+                    @click="cancelEditSocial" 
+                    class="btn-cancel"
+                  >
+                    Cancel Edit
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <!-- Socials List -->
+          <section class="list-section">
+            <div class="section-card">
+              <h2 class="section-title">Active Social Links ({{ socials.length }})</h2>
+              
+              <div v-if="loadingSocials" class="loading-state">
+                <div class="spinner"></div>
+                <p>Fetching social links...</p>
+              </div>
+
+              <div v-else-if="socials.length === 0" class="empty-state">
+                <p>No social links added yet. Create one on the left!</p>
+              </div>
+
+              <div v-else class="table-wrapper">
+                <table class="projects-table">
+                  <thead>
+                    <tr>
+                      <th>Icon</th>
+                      <th>Platform</th>
+                      <th>URL</th>
+                      <th>Order</th>
+                      <th class="actions-header">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="social in socials" :key="social.id">
+                      <td class="col-icon">{{ social.icon || '✦' }}</td>
+                      <td class="col-title"><strong>{{ social.platform }}</strong></td>
+                      <td class="col-desc">
+                        <a :href="social.url" target="_blank" rel="noopener noreferrer" class="table-link">{{ social.url }}</a>
+                      </td>
+                      <td class="col-order">{{ social.sort_order }}</td>
+                      <td class="col-actions">
+                        <button @click="startEditSocial(social)" class="btn-action edit">Edit</button>
+                        <button @click="deleteSocial(social.id)" class="btn-action delete">Delete</button>
                       </td>
                     </tr>
                   </tbody>
@@ -578,6 +712,22 @@ import passportTemplate from '../assets/images/passport.png'
 import Quill from 'quill'
 import 'quill/dist/quill.snow.css'
 
+const phrases = [
+  "Hello vonneh :3",
+  "HAIIII",
+  "Oh vonneh",
+  "jip broah eh eh",
+  "mornin vonneh",
+  "VONNEHHH",
+];
+
+const welcomeText = ref('Hello vonneh :3');
+
+onMounted(() => {
+  const randomIndex = Math.floor(Math.random() * phrases.length);
+  welcomeText.value = phrases[randomIndex];
+});
+
 const router = useRouter()
 const currentTab = ref('tarot')
 const sidebarOpen = ref(false)
@@ -611,6 +761,18 @@ const submittingPartner = ref(false)
 const editingPartner = ref(null)
 const partnerForm = ref({
   name: ''
+})
+
+// Socials States
+const socials = ref([])
+const loadingSocials = ref(true)
+const submittingSocial = ref(false)
+const editingSocial = ref(null)
+const socialForm = ref({
+  platform: '',
+  url: '',
+  icon: '✦',
+  sort_order: 0
 })
 
 // Profile / Info States
@@ -1031,6 +1193,114 @@ const deletePartner = async (id) => {
   }
 }
 
+// ================= SOCIALS CRUD =================
+
+const fetchSocials = async () => {
+  loadingSocials.value = true
+  try {
+    const { data, error } = await supabase
+      .from('socials')
+      .select('*')
+      .order('sort_order', { ascending: true })
+
+    if (error) throw error
+    socials.value = data
+  } catch (err) {
+    console.error('Error loading socials:', err)
+    showNotification('Failed to load socials: ' + err.message, 'error')
+  } finally {
+    loadingSocials.value = false
+  }
+}
+
+const saveSocial = async () => {
+  if (!socialForm.value.platform.trim() || !socialForm.value.url.trim()) return
+  submittingSocial.value = true
+  try {
+    if (editingSocial.value) {
+      const { error } = await supabase
+        .from('socials')
+        .update({
+          platform: socialForm.value.platform.trim(),
+          url: socialForm.value.url.trim(),
+          icon: socialForm.value.icon.trim() || '✦',
+          sort_order: socialForm.value.sort_order || 0
+        })
+        .eq('id', editingSocial.value.id)
+        .select()
+
+      if (error) throw error
+      showNotification('Social link updated successfully!')
+      cancelEditSocial()
+    } else {
+      const { error } = await supabase
+        .from('socials')
+        .insert([{
+          platform: socialForm.value.platform.trim(),
+          url: socialForm.value.url.trim(),
+          icon: socialForm.value.icon.trim() || '✦',
+          sort_order: socialForm.value.sort_order || 0
+        }])
+        .select()
+
+      if (error) throw error
+      showNotification('Social link added successfully!')
+      resetSocialForm()
+    }
+    await fetchSocials()
+  } catch (err) {
+    console.error('Error saving social:', err)
+    showNotification('Failed to save social: ' + err.message, 'error')
+  } finally {
+    submittingSocial.value = false
+  }
+}
+
+const startEditSocial = (social) => {
+  editingSocial.value = social
+  socialForm.value = {
+    platform: social.platform,
+    url: social.url,
+    icon: social.icon || '✦',
+    sort_order: social.sort_order || 0
+  }
+}
+
+const cancelEditSocial = () => {
+  editingSocial.value = null
+  resetSocialForm()
+}
+
+const resetSocialForm = () => {
+  socialForm.value = {
+    platform: '',
+    url: '',
+    icon: '✦',
+    sort_order: 0
+  }
+}
+
+const deleteSocial = async (id) => {
+  if (!confirm('Are you sure you want to delete this social link?')) return
+
+  try {
+    const { error } = await supabase
+      .from('socials')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    showNotification('Social link deleted.')
+    if (editingSocial.value && editingSocial.value.id === id) {
+      cancelEditSocial()
+    }
+    await fetchSocials()
+  } catch (err) {
+    console.error('Error deleting social:', err)
+    showNotification('Failed to delete social: ' + err.message, 'error')
+  }
+}
+
 // ================= PROFILE INFO FUNCTIONS =================
 
 const fetchProfile = async () => {
@@ -1218,6 +1488,7 @@ const handleLogout = async () => {
 onMounted(() => {
   fetchProjects()
   fetchPartners()
+  fetchSocials()
   fetchProfile().then(() => {
     if (currentTab.value === 'profile') {
       initQuill()
@@ -1655,6 +1926,25 @@ onMounted(() => {
 .description-text {
   font-size: 20px;
   color: #9ca3af;
+  animation: rainbow-intro 2s ease-out forwards;
+}
+
+@keyframes rainbow-intro {
+  0% {
+    color: #ff6b6b;
+  }
+  25% {
+    color: #feca57;
+  }
+  50% {
+    color: #1dd1a1;
+  }
+  75% {
+    color: #5f27cd;
+  }
+  100% {
+    color: #9ca3af;
+  }
 }
 
 .preview-label {
@@ -1890,6 +2180,31 @@ onMounted(() => {
   letter-spacing: 0.06em;
   color: #6b7280;
   padding: 4px 0;
+}
+/* Socials table styles */
+.table-link {
+  color: #c9a063;
+  text-decoration: none;
+  font-size: 0.85rem;
+  word-break: break-all;
+  transition: color 0.2s ease;
+}
+
+.table-link:hover {
+  color: #e5c88e;
+  text-decoration: underline;
+}
+
+.col-icon {
+  font-size: 1.2rem;
+  text-align: center;
+  width: 50px;
+}
+
+.col-order {
+  text-align: center;
+  width: 60px;
+  color: #6b7280;
 }
 
 /* ===== RESPONSIVE ADMIN DASHBOARD ===== */

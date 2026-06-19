@@ -107,6 +107,7 @@
                   :key="'l' + idx"
                   class="card-popup-photo"
                   :style="{ transform: `rotate(${photoRotations[idx % photoRotations.length]}deg)` }"
+                  @click.stop="openLightbox(img)"
                 >
                   <img :src="img" :alt="'Photo ' + (idx + 1)" />
                 </div>
@@ -148,6 +149,7 @@
                   :key="'r' + idx"
                   class="card-popup-photo"
                   :style="{ transform: `rotate(${photoRotations[(idx + 3) % photoRotations.length]}deg)` }"
+                  @click.stop="openLightbox(img)"
                 >
                   <img :src="img" :alt="'Photo ' + (leftPhotos.length + idx + 1)" />
                 </div>
@@ -161,6 +163,19 @@
             </div>
           </template>
         </div>
+      </div>
+    </Teleport>
+
+    <!-- ===================== PHOTO LIGHTBOX ===================== -->
+    <Teleport to="body">
+      <div class="lightbox-overlay" :class="{ 'is-open': lightboxOpen }" @click="closeLightbox">
+        <button class="lightbox-close" @click.stop="closeLightbox" aria-label="Close Lightbox">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <img v-if="lightboxSrc" :src="lightboxSrc" alt="Zoomed photo" class="lightbox-img" :class="{ 'is-open': lightboxOpen }" @click.stop />
       </div>
     </Teleport>
   </div>
@@ -199,6 +214,20 @@ const closePopup = () => {
   popupOpen.value = false
   document.body.style.overflow = ''
   setTimeout(() => { activeProject.value = null }, 400)
+}
+
+// Lightbox state
+const lightboxOpen = ref(false)
+const lightboxSrc = ref(null)
+
+const openLightbox = (src) => {
+  lightboxSrc.value = src
+  lightboxOpen.value = true
+}
+
+const closeLightbox = () => {
+  lightboxOpen.value = false
+  setTimeout(() => { lightboxSrc.value = null }, 350)
 }
 
 // Drag-to-scroll states
@@ -611,7 +640,7 @@ const handleCardClick = (project) => {
 }
 
 .card-front-deco {
-  color: #c9a063;
+  color: #581a16;
   font-size: 1.4rem;
   animation: decoSpin 4s linear infinite;
 }
@@ -831,7 +860,7 @@ const handleCardClick = (project) => {
   border-radius: 3px;
   padding: 8px 8px 28px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: default;
+  cursor: pointer;
 }
 
 .card-popup-photo:hover {
@@ -1011,6 +1040,88 @@ const handleCardClick = (project) => {
     right: 12px;
     width: 32px;
     height: 32px;
+  }
+}
+
+/* ===================== LIGHTBOX ===================== */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(10, 4, 4, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+  cursor: zoom-out;
+}
+
+.lightbox-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: rotate(90deg);
+}
+
+.lightbox-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  transform: scale(0.85);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+  cursor: default;
+}
+
+.lightbox-img.is-open {
+  transform: scale(1);
+  opacity: 1;
+}
+
+@media (max-width: 480px) {
+  .lightbox-overlay {
+    padding: 20px;
+  }
+  .lightbox-close {
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
   }
 }
 </style>

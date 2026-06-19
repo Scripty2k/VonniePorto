@@ -22,22 +22,15 @@
         <span class="btn-shine"></span>
       </a>
 
-      <!-- Social links -->
-      <div class="contact-socials">
-        <a href="#" class="social-link" aria-label="Instagram">
-          <span class="social-icon">♡</span>
-          <span>Instagram</span>
-        </a>
-        <span class="social-dot">·</span>
-        <a href="#" class="social-link" aria-label="LinkedIn">
-          <span class="social-icon">◈</span>
-          <span>LinkedIn</span>
-        </a>
-        <span class="social-dot">·</span>
-        <a href="#" class="social-link" aria-label="Twitter">
-          <span class="social-icon">✦</span>
-          <span>Twitter</span>
-        </a>
+      <!-- Social links (dynamic from Supabase) -->
+      <div class="contact-socials" v-if="socials.length > 0">
+        <template v-for="(social, idx) in socials" :key="social.id">
+          <a :href="social.url" class="social-link" :aria-label="social.platform" target="_blank" rel="noopener noreferrer">
+            <span class="social-icon">{{ social.icon || '✦' }}</span>
+            <span>{{ social.platform }}</span>
+          </a>
+          <span v-if="idx < socials.length - 1" class="social-dot">·</span>
+        </template>
       </div>
 
       <!-- Footer note -->
@@ -53,11 +46,29 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { supabase } from '../supabase.js'
 
 const sectionEl = ref(null)
 const isVisible = ref(false)
+const socials = ref([])
+
+const fetchSocials = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('socials')
+      .select('*')
+      .order('sort_order', { ascending: true })
+
+    if (error) throw error
+    socials.value = data || []
+  } catch (err) {
+    console.error('Error loading socials:', err)
+  }
+}
 
 onMounted(() => {
+  fetchSocials()
+
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach(entry => {

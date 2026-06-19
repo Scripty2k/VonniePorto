@@ -65,7 +65,7 @@ const getParticleStyle = (i) => {
   align-items: center;
   width: 100%;
   min-height: 100vh;
-  background: linear-gradient(160deg, #e9deca 0%, #e9deca 30%, #e9deca 60%, #e9deca 100%);
+  background: linear-gradient(160deg, #fff2da 0%, #fff2da 30%, #fff2da 60%, #fff2da 100%);
   padding-top: 100px; /* offset for fixed header */
   overflow-x: hidden;
 }

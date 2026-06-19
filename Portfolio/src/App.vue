@@ -64,9 +64,19 @@
     <!-- Popup Screen -->
     <div :class="['cv-popup', { 'is-open': isCvOpen }]">
       <div class="cv-popup-header">
-        <span class="cv-popup-title">Curriculum Vitae</span>
+        <!-- Shimmer sweep -->
+        <div class="cv-header-shimmer"></div>
+        <div class="cv-popup-title-wrap">
+          <svg class="cv-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <span class="cv-popup-title">Curriculum Vitae</span>
+        </div>
         <button class="cv-popup-close-btn" @click="toggleCv" aria-label="Close CV">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -192,7 +202,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 18px 40px;
-  background: rgba(233, 222, 202, 0.45);
+  background: rgba(247, 233, 210);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.45);
@@ -202,7 +212,7 @@ body {
 
 .site-header.scrolled {
   padding: 10px 40px;
-  background: rgba(233, 222, 202, 0.95);
+  background: rgba(233, 222, 202, 0.35);
   box-shadow: 0 8px 32px rgba(53, 22, 23, 0.18);
 }
 
@@ -469,9 +479,11 @@ body {
   width: min(85vw, 750px);
   height: min(75vh, 800px);
   background-color: #ffffff;
-  border-radius: 12px;
-  border: 1.5px solid #c9a063;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  border: 1.5px solid rgba(201, 160, 99, 0.6);
+  box-shadow: 
+    0 24px 60px rgba(53, 22, 23, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -494,42 +506,100 @@ body {
   pointer-events: auto;
 }
 
+/* ===== CV POPUP HEADER ===== */
 .cv-popup-header {
-  padding: 14px 20px;
-  background-color: #faf6f0;
-  border-bottom: 1px solid #e8e2d9;
+  position: relative;
+  padding: 16px 20px;
+  background: rgba(233, 222, 202, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  overflow: hidden;
+}
+
+/* Animated shimmer sweep — same as site header */
+.cv-header-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.32) 50%,
+    transparent 80%
+  );
+  animation: cvHeaderShimmer 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes cvHeaderShimmer {
+  0%   { left: -60%; opacity: 0; }
+  10%  { opacity: 1; }
+  60%  { left: 140%; opacity: 1; }
+  70%  { opacity: 0; }
+  100% { left: 140%; opacity: 0; }
+}
+
+.cv-popup-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.cv-title-icon {
+  width: 20px;
+  height: 20px;
+  stroke: #801424;
+  flex-shrink: 0;
+  opacity: 0.85;
 }
 
 .cv-popup-title {
   font-family: 'Romantic', 'Times New Roman', serif;
   font-weight: 700;
-  font-size: 1.15rem;
-  color: #4a2c2a;
+  font-size: 1.18rem;
+  background: linear-gradient(135deg, #351617 0%, #801424 55%, #4a2c2a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.02em;
 }
 
 .cv-popup-close-btn {
-  background: none;
-  border: none;
+  position: relative;
+  z-index: 1;
+  background: rgba(233, 222, 202, 0.85);
+  border: 1.5px solid rgba(233, 222, 202, 0.95);
   cursor: pointer;
-  color: #888;
-  padding: 4px;
-  border-radius: 4px;
+  color: #351617;
+  padding: 6px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  transition: all 0.2s;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(53, 22, 23, 0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .cv-popup-close-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #8b263e;
+  background: linear-gradient(135deg, #351617 0%, #801424 100%);
+  color: #ffffff;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(53, 22, 23, 0.3);
 }
 
 .cv-popup-close-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .cv-popup-body {

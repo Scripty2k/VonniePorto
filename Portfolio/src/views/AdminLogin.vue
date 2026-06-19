@@ -2,8 +2,8 @@
   <div class="login-container">
     <div class="login-card">
       <div class="card-deco">✦</div>
-      <h1 class="login-title">Sanctum Login</h1>
-      <p class="login-subtitle">Enter credentials to modify the cards of fate.</p>
+      <h1 class="login-title">Login</h1>
+      <p class="login-subtitle">Enter credentials here please :)</p>
       
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
@@ -33,7 +33,7 @@
         </div>
 
         <button type="submit" :disabled="loading" class="btn-submit">
-          {{ loading ? 'Unlocking...' : 'Reveal Dashboard' }}
+          {{ loading ? 'Unlocking...' : 'Reveal the magic' }}
         </button>
       </form>
       
