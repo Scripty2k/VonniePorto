@@ -52,7 +52,7 @@ const props = defineProps({
 const mounted = ref(false)
 const displayedMotto = ref('')
 const typing = ref(true)
-const motto = 'Random motto here...'
+const motto = 'Digital Designer'
 
 const titleWords = computed(() => {
   const words = props.title.split(' ')

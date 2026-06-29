@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard-layout" :class="{ 'sidebar-open': sidebarOpen }">
+  <div class="dashboard-layout" :class="{ 'sidebar-open': sidebarOpen, 'light-theme': !isDarkMode }">
     <!-- Backdrop Overlay for Mobile -->
     <div v-if="sidebarOpen" class="sidebar-backdrop" @click="closeSidebar"></div>
 
@@ -71,6 +71,41 @@
       </nav>
       
       <div class="sidebar-footer">
+        <!-- Pretty segmented toggle control for light/dark mode -->
+        <div class="theme-toggle-container">
+          <button 
+            type="button"
+            @click="isDarkMode = false" 
+            :class="['theme-toggle-btn-half', { active: !isDarkMode }]"
+            aria-label="Light Mode"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <span>Light</span>
+          </button>
+          <button 
+            type="button"
+            @click="isDarkMode = true" 
+            :class="['theme-toggle-btn-half', { active: isDarkMode }]"
+            aria-label="Dark Mode"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <span>Dark</span>
+          </button>
+          <div class="theme-toggle-slider" :class="{ 'is-dark': isDarkMode }"></div>
+        </div>
+
         <router-link to="/" class="nav-item external-link">
           <!-- External Link SVG Icon -->
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -159,6 +194,26 @@
                     v-model="projectForm.link_url"
                     placeholder="https://example.com/project"
                   />
+                </div>
+
+                <!-- Custom Card Back Image -->
+                <div class="form-group">
+                  <label>Custom Card Back (Optional)</label>
+                  <p class="section-hint" style="margin: 0 0 8px 0; font-size: 0.8rem;">Upload a custom image for this card's back. If empty, a random default card design is used.</p>
+                  <div v-if="projectForm.card_back_image" class="card-back-preview">
+                    <img :src="projectForm.card_back_image" alt="Custom card back" class="card-back-preview-img" />
+                    <button type="button" @click="removeCardBackImage" class="btn-action delete" style="margin-top: 8px;">Remove Custom Card</button>
+                  </div>
+                  <label v-else class="btn-secondary upload-label">
+                    <input
+                      type="file"
+                      @change="handleCardBackUpload"
+                      accept="image/*"
+                      class="file-input-hidden"
+                    />
+                    Upload Card Back Image
+                  </label>
+                  <small class="help-text">JPEG/PNG, up to 2MB. Recommended size: 250×416px.</small>
                 </div>
 
                 <div v-if="notification" :class="['notification-banner', notification.type]">
@@ -740,6 +795,12 @@ const closeSidebar = () => {
   sidebarOpen.value = false
 }
 
+// Light / Dark Theme Mode
+const isDarkMode = ref(localStorage.getItem('admin-theme') !== 'light')
+watch(isDarkMode, (newVal) => {
+  localStorage.setItem('admin-theme', newVal ? 'dark' : 'light')
+})
+
 // Tarot Card States
 const projects = ref([])
 const loadingProjects = ref(true)
@@ -751,7 +812,8 @@ const projectForm = ref({
   detailed_content: '',
   detailed_content_html: '',
   project_images: [],
-  link_url: ''
+  link_url: '',
+  card_back_image: null
 })
 
 // Partners States
@@ -930,7 +992,8 @@ const saveProject = async () => {
           title: projectForm.value.title,
           description: projectForm.value.description,
           detailed_content: projectForm.value.detailed_content,
-          link_url: projectForm.value.link_url
+          link_url: projectForm.value.link_url,
+          card_back_image: projectForm.value.card_back_image
         })
         .eq('id', editingProject.value.id)
         .select()
@@ -945,7 +1008,8 @@ const saveProject = async () => {
           title: projectForm.value.title,
           description: projectForm.value.description,
           detailed_content: projectForm.value.detailed_content,
-          link_url: projectForm.value.link_url
+          link_url: projectForm.value.link_url,
+          card_back_image: projectForm.value.card_back_image
         }])
         .select()
 
@@ -1046,7 +1110,8 @@ const startEditProject = async (project) => {
     detailed_content: project.detailed_content || '',
     detailed_content_html: project.detailed_content_html || '',
     project_images: project.project_images || [],
-    link_url: project.link_url || ''
+    link_url: project.link_url || '',
+    card_back_image: project.card_back_image || null
   }
   // Re-init tarot quill with new content
   await nextTick()
@@ -1068,8 +1133,32 @@ const resetProjectForm = () => {
     detailed_content: '',
     detailed_content_html: '',
     project_images: [],
-    link_url: ''
+    link_url: '',
+    card_back_image: null
   }
+}
+
+const handleCardBackUpload = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  if (file.size > 2 * 1024 * 1024) {
+    showNotification('Card back image must be smaller than 2MB', 'error')
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    projectForm.value.card_back_image = e.target.result
+    showNotification('Custom card back loaded! Click "Deal Card" or "Update Card" to apply.', 'success')
+  }
+  reader.readAsDataURL(file)
+  event.target.value = ''
+}
+
+const removeCardBackImage = () => {
+  projectForm.value.card_back_image = null
+  showNotification('Custom card back removed. A random default card will be used.', 'success')
 }
 
 const deleteProject = async (id) => {
@@ -1500,18 +1589,117 @@ onMounted(() => {
 <style scoped>
 /* Main Layout & Default System Typography */
 .dashboard-layout {
+  /* Default Dark Mode Theme Custom Properties */
+  --bg-layout: #1a1a1a;
+  --bg-sidebar: #121212;
+  --bg-header: #141414;
+  --bg-card: #222222;
+  --bg-input: #1a1a1a;
+  --bg-input-focus: #1e1e1e;
+  --border-color: #2e2e2e;
+  --border-input: #3e3e3e;
+  --text-main: #e5e5e5;
+  --text-title: #ffffff;
+  --text-muted: #9ca3af;
+  --text-hint: #6b7280;
+  --bg-nav-active: #242424;
+  --bg-nav-hover: rgba(255, 255, 255, 0.04);
+  --border-nav-active: #333333;
+  --table-hover: #262626;
+  --quill-editor-bg: #1a1a1a;
+  --quill-toolbar-bg: #1e1e1e;
+  --spinner-bg: rgba(255, 255, 255, 0.08);
+  --passport-frame-bg: #161616;
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  --color-logout: #fca5a5;
+  --color-logout-hover: #f87171;
+  --bg-logout-hover: rgba(239, 68, 68, 0.08);
+  --accent-focus-shadow: rgba(201, 160, 99, 0.15);
+  --color-accent: #c9a063;
+  --color-accent-hover: #e5c88e;
+  --bg-cancel: #222222;
+  --bg-cancel-hover: #2a2a2a;
+  --border-cancel: #3e3e3e;
+  --color-primary: #8b263e;
+  --color-primary-hover: #a72f4c;
+
   display: flex;
   min-height: 100vh;
-  background-color: #1a1a1a; /* Dark premium background */
-  color: #e5e5e5;
+  background-color: var(--bg-layout);
+  color: var(--text-main);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Light Theme overrides */
+.dashboard-layout.light-theme {
+  --bg-layout: #f4f5f6;
+  --bg-sidebar: #ffffff;
+  --bg-header: #fafafa;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-input-focus: #ffffff;
+  --border-color: #e2e8f0;
+  --border-input: #cbd5e1;
+  --text-main: #334155;
+  --text-title: #0f172a;
+  --text-muted: #64748b;
+  --text-hint: #94a3b8;
+  --bg-nav-active: #f1f5f9;
+  --bg-nav-hover: rgba(15, 23, 42, 0.04);
+  --border-nav-active: #e2e8f0;
+  --table-hover: #f8fafc;
+  --quill-editor-bg: #ffffff;
+  --quill-toolbar-bg: #f8fafc;
+  --spinner-bg: rgba(15, 23, 42, 0.08);
+  --passport-frame-bg: #f8fafc;
+  --card-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  --color-logout: #ef4444;
+  --color-logout-hover: #dc2626;
+  --bg-logout-hover: rgba(239, 68, 68, 0.06);
+  --accent-focus-shadow: rgba(201, 160, 99, 0.12);
+  --color-accent: #b28a50; /* A slightly darker gold for high contrast & readability in light mode */
+  --color-accent-hover: #916c39;
+  --bg-cancel: #f1f5f9;
+  --bg-cancel-hover: #e2e8f0;
+  --border-cancel: #cbd5e1;
+  --color-primary: #9d2d48; /* Slightly deeper burgundy for readability */
+  --color-primary-hover: #b43855;
+}
+
+/* Smooth transitions for theme switching */
+.dashboard-layout,
+.dashboard-sidebar,
+.dashboard-content,
+.content-header,
+.section-card,
+.form-group input,
+.form-group textarea,
+.btn-primary,
+.btn-cancel,
+.nav-item,
+.projects-table th,
+.projects-table td,
+.projects-table tr,
+.quill-editor-wrapper,
+.passport-preview-frame,
+.card-back-preview,
+.mobile-top-bar,
+.theme-toggle-slider,
+.theme-toggle-container,
+.logo-area,
+.logo-icon,
+.description-text {
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Supabase-style Sidebar */
 .dashboard-sidebar {
   width: 260px;
-  background-color: #121212;
-  border-right: 1px solid #2e2e2e;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -1519,20 +1707,20 @@ onMounted(() => {
 
 .sidebar-header {
   padding: 24px;
-  border-bottom: 1px solid #2e2e2e;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .logo-area {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #ffffff;
+  color: var(--text-title);
   font-weight: 700;
   font-size: 1.1rem;
 }
 
 .logo-icon {
-  color: #c9a063; /* Elegant Gold highlight */
+  color: var(--color-accent);
   font-size: 1.25rem;
 }
 
@@ -1552,7 +1740,7 @@ onMounted(() => {
   padding: 10px 14px;
   background: none;
   border: 1px solid transparent;
-  color: #9ca3af;
+  color: var(--text-muted);
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.92rem;
@@ -1564,14 +1752,14 @@ onMounted(() => {
 }
 
 .nav-item:hover {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.04);
+  color: var(--text-title);
+  background-color: var(--bg-nav-hover);
 }
 
 .nav-item.active {
-  color: #ffffff;
-  background-color: #242424;
-  border-color: #333333;
+  color: var(--text-title);
+  background-color: var(--bg-nav-active);
+  border-color: var(--border-nav-active);
 }
 
 .nav-icon {
@@ -1583,19 +1771,78 @@ onMounted(() => {
 
 .sidebar-footer {
   padding: 14px;
-  border-top: 1px solid #2e2e2e;
+  border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
 .btn-logout-sidebar {
-  color: #fca5a5;
+  color: var(--color-logout);
 }
 
 .btn-logout-sidebar:hover {
-  background-color: rgba(239, 68, 68, 0.08);
-  color: #f87171;
+  background-color: var(--bg-logout-hover);
+  color: var(--color-logout-hover);
+}
+
+/* ===== THEME TOGGLE ELEMENT ===== */
+.theme-toggle-container {
+  position: relative;
+  display: flex;
+  background-color: var(--bg-layout);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 8px;
+  width: 100%;
+  overflow: hidden;
+  user-select: none;
+}
+
+.theme-toggle-btn-half {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 2;
+  border: none;
+  background: transparent;
+  padding: 8px 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  outline: none;
+  border-radius: 6px;
+  transition: color 0.3s ease;
+}
+
+.theme-toggle-btn-half.active {
+  color: var(--text-title);
+}
+
+.theme-toggle-btn-half:hover:not(.active) {
+  color: var(--text-title);
+}
+
+.theme-toggle-slider {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  background-color: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  z-index: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transform: translateX(0);
+}
+
+.theme-toggle-slider.is-dark {
+  transform: translateX(100%);
 }
 
 /* Main Content Wrapper */
@@ -1609,20 +1856,20 @@ onMounted(() => {
 /* Header styled with defaults and italic */
 .content-header {
   padding: 24px 40px;
-  border-bottom: 1px solid #2e2e2e;
-  background-color: #141414;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-header);
 }
 
 .content-title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-title);
   margin: 0 0 6px 0;
 }
 
 .content-subtitle {
   font-size: 0.88rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   font-style: italic; /* Requested italic */
   margin: 0;
 }
@@ -1643,19 +1890,19 @@ onMounted(() => {
 
 /* Section Cards */
 .section-card {
-  background-color: #222222;
-  border: 1px solid #2e2e2e;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 28px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--card-shadow);
 }
 
 .section-title {
   font-size: 1.2rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-title);
   margin: 0 0 24px 0;
-  border-bottom: 1px solid #2e2e2e;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 12px;
 }
 
@@ -1675,7 +1922,7 @@ onMounted(() => {
 .form-group label {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #9ca3af;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -1683,26 +1930,26 @@ onMounted(() => {
 .form-group input, 
 .form-group textarea {
   padding: 11px 14px;
-  border: 1px solid #3e3e3e;
+  border: 1px solid var(--border-input);
   border-radius: 6px;
   font-size: 0.92rem;
-  background-color: #1a1a1a;
-  color: #e5e5e5;
+  background-color: var(--bg-input);
+  color: var(--text-main);
   transition: all 0.2s ease;
 }
 
 .form-group input:focus, 
 .form-group textarea:focus {
   outline: none;
-  border-color: #c9a063;
-  background-color: #1e1e1e;
-  box-shadow: 0 0 0 3px rgba(201, 160, 99, 0.15);
+  border-color: var(--color-accent);
+  background-color: var(--bg-input-focus);
+  box-shadow: 0 0 0 3px var(--accent-focus-shadow);
 }
 
 /* Helper small print */
 .help-text {
   font-size: 0.76rem;
-  color: #8c9096;
+  color: var(--text-hint);
   margin-top: 2px;
   font-style: italic;
 }
@@ -1711,7 +1958,7 @@ onMounted(() => {
 .form-group input::placeholder, 
 .form-group textarea::placeholder {
   font-style: italic;
-  color: #6b7280;
+  color: var(--text-hint);
 }
 
 /* Notification Banners */
@@ -1743,7 +1990,7 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background-color: #8b263e;
+  background-color: var(--color-primary);
   color: #ffffff;
   border: none;
   padding: 12px 24px;
@@ -1755,7 +2002,7 @@ onMounted(() => {
 }
 
 .btn-primary:hover {
-  background-color: #a72f4c;
+  background-color: var(--color-primary-hover);
   box-shadow: 0 2px 10px rgba(139, 38, 62, 0.3);
 }
 
@@ -1766,9 +2013,9 @@ onMounted(() => {
 }
 
 .btn-cancel {
-  background-color: #222222;
-  color: #e5e5e5;
-  border: 1px solid #3e3e3e;
+  background-color: var(--bg-cancel);
+  color: var(--text-main);
+  border: 1px solid var(--border-cancel);
   padding: 12px 20px;
   border-radius: 6px;
   font-weight: 600;
@@ -1778,8 +2025,8 @@ onMounted(() => {
 }
 
 .btn-cancel:hover {
-  background-color: #2a2a2a;
-  border-color: #4e4e4e;
+  background-color: var(--bg-cancel-hover);
+  border-color: var(--border-input);
 }
 
 /* Loading & Empty states */
@@ -1787,7 +2034,7 @@ onMounted(() => {
 .empty-state {
   text-align: center;
   padding: 48px 0;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .loading-state p, 
@@ -1799,8 +2046,8 @@ onMounted(() => {
 .spinner {
   width: 36px;
   height: 36px;
-  border: 3.5px solid rgba(255, 255, 255, 0.08);
-  border-left-color: #c9a063;
+  border: 3.5px solid var(--spinner-bg);
+  border-left-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0 auto 16px;
@@ -1813,7 +2060,7 @@ onMounted(() => {
 /* Table styling for dark theme */
 .table-wrapper {
   overflow-x: auto;
-  border: 1px solid #2e2e2e;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
 }
 
@@ -1824,18 +2071,18 @@ onMounted(() => {
 }
 
 .projects-table th {
-  background-color: #1c1c1c;
-  border-bottom: 2px solid #2e2e2e;
+  background-color: var(--bg-header);
+  border-bottom: 2px solid var(--border-color);
   padding: 14px 18px;
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: #9ca3af;
+  color: var(--text-muted);
   letter-spacing: 0.05em;
 }
 
 .projects-table td {
-  border-bottom: 1px solid #2e2e2e;
+  border-bottom: 1px solid var(--border-color);
   padding: 16px 18px;
   font-size: 0.92rem;
   vertical-align: middle;
@@ -1846,16 +2093,16 @@ onMounted(() => {
 }
 
 .projects-table tbody tr:hover td {
-  background-color: #262626;
+  background-color: var(--table-hover);
 }
 
 .col-title {
-  color: #ffffff;
+  color: var(--text-title);
   font-weight: 600;
 }
 
 .col-desc {
-  color: #9ca3af;
+  color: var(--text-muted);
   font-style: italic; /* Helper text italicized */
   max-width: 280px;
   overflow: hidden;
@@ -1886,14 +2133,14 @@ onMounted(() => {
 }
 
 .btn-action.edit {
-  background-color: #222222;
-  color: #e5e5e5;
-  border: 1px solid #3e3e3e;
+  background-color: var(--bg-cancel);
+  color: var(--text-main);
+  border: 1px solid var(--border-cancel);
 }
 
 .btn-action.edit:hover {
-  background-color: #2a2a2a;
-  border-color: #c9a063;
+  background-color: var(--bg-cancel-hover);
+  border-color: var(--color-accent);
 }
 
 .btn-action.delete {
@@ -1925,7 +2172,7 @@ onMounted(() => {
 
 .description-text {
   font-size: 20px;
-  color: #9ca3af;
+  color: var(--text-muted);
   animation: rainbow-intro 2s ease-out forwards;
 }
 
@@ -1943,14 +2190,14 @@ onMounted(() => {
     color: #5f27cd;
   }
   100% {
-    color: #9ca3af;
+    color: var(--text-muted);
   }
 }
 
 .preview-label {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #9ca3af;
+  color: var(--text-muted);
   text-transform: uppercase;
   margin-bottom: 12px;
   align-self: flex-start;
@@ -1959,9 +2206,9 @@ onMounted(() => {
 .passport-preview-frame {
   max-width: 240px;
   border-radius: 8px;
-  border: 2px dashed #3e3e3e;
+  border: 2px dashed var(--border-input);
   padding: 10px;
-  background-color: #161616;
+  background-color: var(--passport-frame-bg);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1976,7 +2223,7 @@ onMounted(() => {
 
 .preview-source {
   font-size: 0.8rem;
-  color: #c9a063;
+  color: var(--color-accent);
   margin-top: 10px;
   font-style: italic;
 }
@@ -1986,7 +2233,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  border-top: 1px solid #2e2e2e;
+  border-top: 1px solid var(--border-color);
   padding-top: 20px;
 }
 
@@ -2000,18 +2247,18 @@ onMounted(() => {
   justify-content: center;
   padding: 11px 20px;
   cursor: pointer;
-  background-color: #222222;
-  border: 1px solid #c9a063;
+  background-color: var(--bg-cancel);
+  border: 1px solid var(--color-accent);
   border-radius: 6px;
-  color: #e5e5e5;
+  color: var(--text-main);
   font-weight: 600;
   font-size: 0.92rem;
   transition: all 0.2s ease;
 }
 
 .upload-label:hover {
-  background-color: #2a2a2a;
-  border-color: #8b263e;
+  background-color: var(--bg-cancel-hover);
+  border-color: var(--color-primary);
 }
 
 .passport-actions {
@@ -2026,9 +2273,9 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: #222222;
-  border: 1px solid #3e3e3e;
-  color: #e5e5e5;
+  background-color: var(--bg-cancel);
+  border: 1px solid var(--border-cancel);
+  color: var(--text-main);
   padding: 11px 20px;
   border-radius: 6px;
   font-weight: 600;
@@ -2037,8 +2284,7 @@ onMounted(() => {
 }
 
 .download-template-btn:hover {
-  background-color: #2a2a2a;
-  border-color: #4e4e4e;
+  background-color: var(--bg-cancel-hover);
 }
 
 .btn-icon {
@@ -2053,6 +2299,26 @@ onMounted(() => {
   font-size: 0.92rem !important;
 }
 
+/* ===== CARD BACK PREVIEW ===== */
+.card-back-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--passport-frame-bg);
+  border: 1px dashed var(--border-input);
+  border-radius: 8px;
+}
+
+.card-back-preview-img {
+  width: 120px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
 /* ===== POPUP CONTENT SECTIONS ===== */
 .popup-section {
   /* These sections span the full content-body grid so they sit below the 2-col layout */
@@ -2061,15 +2327,15 @@ onMounted(() => {
 
 .section-hint {
   font-size: 0.82rem;
-  color: #6b7280;
+  color: var(--text-muted);
   font-style: italic;
   margin: -12px 0 20px;
 }
 
 /* Quill editor override for dark dashboard */
 .quill-editor-wrapper {
-  background-color: #1a1a1a;
-  border: 1px solid #3e3e3e;
+  background-color: var(--quill-editor-bg);
+  border: 1px solid var(--border-input);
   border-radius: 6px;
   overflow: hidden;
   min-height: 260px;
@@ -2078,50 +2344,50 @@ onMounted(() => {
 /* Override Quill toolbar + editor for dark mode */
 :deep(.ql-toolbar.ql-snow) {
   border: none;
-  border-bottom: 1px solid #3e3e3e;
-  background: #1e1e1e;
+  border-bottom: 1px solid var(--border-input);
+  background: var(--quill-toolbar-bg);
   padding: 10px 12px;
 }
 
 :deep(.ql-toolbar.ql-snow .ql-stroke) {
-  stroke: #9ca3af;
+  stroke: var(--text-muted);
 }
 
 :deep(.ql-toolbar.ql-snow .ql-fill) {
-  fill: #9ca3af;
+  fill: var(--text-muted);
 }
 
 :deep(.ql-toolbar.ql-snow .ql-picker-label) {
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 :deep(.ql-toolbar.ql-snow button:hover .ql-stroke),
 :deep(.ql-toolbar.ql-snow button.ql-active .ql-stroke) {
-  stroke: #c9a063;
+  stroke: var(--color-accent);
 }
 
 :deep(.ql-toolbar.ql-snow .ql-picker-label:hover),
 :deep(.ql-toolbar.ql-snow .ql-picker-label.ql-active) {
-  color: #c9a063;
+  color: var(--color-accent);
 }
 
 :deep(.ql-container.ql-snow) {
   border: none;
   font-family: 'Times New Roman', serif;
   font-size: 0.95rem;
-  color: #e5e5e5;
+  color: var(--text-main);
   min-height: 200px;
 }
 
 :deep(.ql-editor) {
   min-height: 200px;
   line-height: 1.75;
-  color: #e5e5e5;
+  color: var(--text-main);
   padding: 14px 16px;
 }
 
 :deep(.ql-editor.ql-blank::before) {
-  color: #4e4e4e;
+  color: var(--text-hint);
   font-style: italic;
 }
 
@@ -2135,8 +2401,8 @@ onMounted(() => {
 
 .popup-gallery-item {
   position: relative;
-  background: #1a1a1a;
-  border: 1px solid #3e3e3e;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -2178,12 +2444,12 @@ onMounted(() => {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #6b7280;
+  color: var(--text-hint);
   padding: 4px 0;
 }
 /* Socials table styles */
 .table-link {
-  color: #c9a063;
+  color: var(--color-accent);
   text-decoration: none;
   font-size: 0.85rem;
   word-break: break-all;
@@ -2191,7 +2457,7 @@ onMounted(() => {
 }
 
 .table-link:hover {
-  color: #e5c88e;
+  color: var(--color-accent-hover);
   text-decoration: underline;
 }
 
@@ -2204,7 +2470,7 @@ onMounted(() => {
 .col-order {
   text-align: center;
   width: 60px;
-  color: #6b7280;
+  color: var(--text-hint);
 }
 
 /* ===== RESPONSIVE ADMIN DASHBOARD ===== */
@@ -2218,8 +2484,8 @@ onMounted(() => {
     align-items: center;
     justify-content: space-between;
     padding: 14px 20px;
-    background-color: #121212;
-    border-bottom: 1px solid #2e2e2e;
+    background-color: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -2228,7 +2494,7 @@ onMounted(() => {
   .mobile-menu-btn {
     background: none;
     border: none;
-    color: #e5e5e5;
+    color: var(--text-main);
     cursor: pointer;
     padding: 4px;
     display: flex;
@@ -2246,7 +2512,7 @@ onMounted(() => {
     align-items: center;
     gap: 8px;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-title);
     font-size: 1rem;
   }
 

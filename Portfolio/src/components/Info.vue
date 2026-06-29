@@ -160,7 +160,7 @@ const profile = ref({
   name: 'Siobhan Moors.',
   pronunciation: 'pronounced [Shuh-vohn]',
   bio: 'A short bio blurb about yourself goes here. Talk about your passion, what drives your creative work, and what makes you uniquely you.',
-  tags: ['🎨 Design', '💻 Dev', '✨ Creative'],
+  tags: ['Design', 'Dev', 'Creative'],
   passport_image: null,
   popup_content: '',
   popup_images: []

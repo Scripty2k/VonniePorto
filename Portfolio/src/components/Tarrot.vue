@@ -46,7 +46,7 @@
 
           <div class="card-inner">
             <div class="card-back">
-              <img src="../assets/cards/card.png" alt="Card Back" class="card-back-img" draggable="false" />
+              <img :src="getCardBack(project)" alt="Card Back" class="card-back-img" draggable="false" />
               <div class="card-back-overlay"></div>
             </div>
 
@@ -185,6 +185,27 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '../supabase.js'
 import 'quill/dist/quill.snow.css'
+
+// Import all card back images
+import cardBack1 from '../assets/cards/card.png'
+import cardBack2 from '../assets/cards/card2.png'
+import cardBack3 from '../assets/cards/card3.png'
+
+const defaultCardBacks = [cardBack1, cardBack2, cardBack3]
+
+// Simple hash from project id to get a consistent random card per project
+const getCardBack = (project) => {
+  // If the project has a custom card back uploaded from admin, use it
+  if (project.card_back_image) return project.card_back_image
+  // Otherwise pick a random default card based on the project id (consistent per project)
+  let hash = 0
+  const idStr = String(project.id)
+  for (let i = 0; i < idStr.length; i++) {
+    hash = ((hash << 5) - hash) + idStr.charCodeAt(i)
+    hash |= 0
+  }
+  return defaultCardBacks[Math.abs(hash) % defaultCardBacks.length]
+}
 
 const projects = ref([])
 const loading = ref(true)
