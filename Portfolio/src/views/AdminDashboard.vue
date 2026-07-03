@@ -584,14 +584,38 @@
                 </div>
 
                 <div class="form-group">
-                  <label for="tags">Badges / Skills (Comma-separated)</label>
-                  <input 
-                    type="text" 
-                    id="tags" 
-                    v-model="profileForm.tags" 
-                    placeholder="🎨 Design, 💻 Dev, ✨ Creative"
-                  />
-                  <small class="help-text">Separate tags with commas. E.g. 🎨 Design, 💻 Dev</small>
+                  <label>Passport Stamps / Skills</label>
+                  <p class="section-hint" style="margin: 0 0 12px 0; font-size: 0.82rem; color: #a0a0a0;">Add skills or badges that appear as travel stamps in the About Me section. For each skill, choose an authentic stamp template design.</p>
+                  
+                  <div class="admin-stamps-list">
+                    <div v-for="(tagItem, idx) in profileTagsList" :key="idx" class="admin-stamp-item">
+                      <input 
+                        type="text" 
+                        v-model="tagItem.text" 
+                        placeholder="Tag text (e.g. Design)" 
+                        class="admin-stamp-input"
+                        required
+                      />
+                      
+                      <select v-model="tagItem.stamp" class="admin-stamp-select">
+                        <option value="">Auto (Sequential)</option>
+                        <option value="circle">Circle (Ink Blue)</option>
+                        <option value="hexagon">Hexagon (Red Ink)</option>
+                        <option value="triangle">Triangle (Emerald Green)</option>
+                        <option value="double-rect">Double Rectangle (Orange/Rust)</option>
+                        <option value="oval">Oval (Vintage Navy)</option>
+                        <option value="scallop-rect">Scalloped Rectangle (Pink/Magenta)</option>
+                      </select>
+                      
+                      <button type="button" @click="removeAdminTag(idx)" class="btn-action delete btn-remove-tag">
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <button type="button" @click="addAdminTag" class="btn-secondary" style="margin-top: 12px;">
+                    + Add New Stamp / Tag
+                  </button>
                 </div>
 
                 <div v-if="notification" :class="['notification-banner', notification.type]">
@@ -843,7 +867,6 @@ const profileForm = ref({
   name: '',
   pronunciation: '',
   bio: '',
-  tags: '',
   passport_image: null,
   popup_content: '',
   popup_images: []
@@ -851,6 +874,7 @@ const profileForm = ref({
 const loadingProfile = ref(true)
 const savingProfile = ref(false)
 const savingPopup = ref(false)
+const profileTagsList = ref([])
 
 // Quill editor instances
 let quillEditor = null       // profile popup editor
@@ -1411,21 +1435,36 @@ const fetchProfile = async () => {
         name: 'Siobhan Moors.',
         pronunciation: 'pronounced [Shuh-vohn]',
         bio: 'A short bio blurb about yourself goes here. Talk about your passion, what drives your creative work, and what makes you uniquely you.',
-        tags: '🎨 Design, 💻 Dev, ✨ Creative',
         passport_image: null,
         popup_content: '',
         popup_images: []
       }
+      profileTagsList.value = [
+        { text: 'Design', stamp: 'hexagon' },
+        { text: 'Dev', stamp: 'triangle' },
+        { text: 'Creative', stamp: 'oval' }
+      ]
     } else if (data) {
       profileForm.value = {
         greeting: data.greeting || '',
         name: data.name || '',
         pronunciation: data.pronunciation || '',
         bio: data.bio || '',
-        tags: data.tags ? data.tags.join(', ') : '',
         passport_image: data.passport_image || null,
         popup_content: data.popup_content || '',
         popup_images: data.popup_images || []
+      }
+      
+      // Parse tags
+      profileTagsList.value = []
+      if (data.tags) {
+        profileTagsList.value = data.tags.map(tStr => {
+          const parts = tStr.split(':')
+          return {
+            text: parts[0],
+            stamp: parts[1] || ''
+          }
+        })
       }
     }
   } catch (err) {
@@ -1439,11 +1478,10 @@ const fetchProfile = async () => {
 const saveProfile = async () => {
   savingProfile.value = true
   try {
-    // Process comma-separated tags into array
-    const tagsArray = profileForm.value.tags
-      .split(',')
-      .map(t => t.trim())
-      .filter(Boolean)
+    // Process profileTagsList into string array
+    const tagsArray = profileTagsList.value
+      .filter(t => t.text && t.text.trim())
+      .map(t => `${t.text.trim()}:${t.stamp}`)
 
     const { error } = await supabase
       .from('profile')
@@ -1466,6 +1504,14 @@ const saveProfile = async () => {
   } finally {
     savingProfile.value = false
   }
+}
+
+const addAdminTag = () => {
+  profileTagsList.value.push({ text: '', stamp: '' })
+}
+
+const removeAdminTag = (idx) => {
+  profileTagsList.value.splice(idx, 1)
 }
 
 const savePopupContent = async () => {
@@ -2476,6 +2522,55 @@ onMounted(() => {
 /* ===== RESPONSIVE ADMIN DASHBOARD ===== */
 .mobile-top-bar {
   display: none;
+}
+
+/* Stamps editor layout */
+.admin-stamps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 650px;
+}
+
+.admin-stamp-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.admin-stamp-input {
+  flex: 1;
+  min-width: 150px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-input);
+  background-color: var(--bg-input);
+  color: var(--text-main);
+}
+
+.admin-stamp-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.admin-stamp-select {
+  width: 220px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-input);
+  background-color: var(--bg-input);
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.admin-stamp-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.btn-remove-tag {
+  padding: 10px 16px;
 }
 
 @media (max-width: 768px) {

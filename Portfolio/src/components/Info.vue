@@ -23,14 +23,111 @@
         <p class="info-bio">
           {{ profile.bio }}
         </p>
-
-        <!-- Decorative badges -->
-        <div class="info-badges">
-          <span v-for="(tag, idx) in profile.tags" :key="idx" class="badge">
-            {{ tag }}
-          </span>
-        </div>
       </div>
+
+      <!-- Decorative stamps -->
+      <div class="info-stamps-container" v-if="parsedTags && parsedTags.length">
+          <div
+            v-for="(tagObj, idx) in parsedTags"
+            :key="idx"
+            class="stamp-wrapper"
+            :style="getStampStyle(tagObj.text, idx, tagObj.stampId).style"
+            :title="tagObj.text"
+          >
+            <!-- Circular Stamp -->
+            <svg
+              v-if="getStampStyle(tagObj.text, idx, tagObj.stampId).templateId === 'circle'"
+              viewBox="0 0 160 160"
+              class="stamp-svg stamp-svg--circle"
+            >
+              <defs>
+                <path :id="'circle-path-top-' + idx" d="M 22,80 A 58,58 0 0,1 138,80" fill="none" />
+                <path :id="'circle-path-bottom-' + idx" d="M 138,80 A 58,58 0 0,1 22,80" fill="none" />
+              </defs>
+              <circle cx="80" cy="80" r="72" fill="none" stroke="currentColor" stroke-width="2.5" />
+              <circle cx="80" cy="80" r="64" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3,3" />
+              <text fill="currentColor" font-size="12" font-family="Coolvetica" letter-spacing="1">
+                <textPath :href="'#circle-path-top-' + idx" startOffset="50%" text-anchor="middle">★ PASSPORT ★</textPath>
+              </text>
+              <text fill="currentColor" font-size="8" font-family="Coolvetica" letter-spacing="0.5">
+                <textPath :href="'#circle-path-bottom-' + idx" startOffset="50%" text-anchor="middle">OFFICIAL VISA</textPath>
+              </text>
+              <text x="80" y="78" text-anchor="middle" font-family="Coolvetica" :font-size="getFontSize(tagObj.text, 30)" font-weight="bold" fill="currentColor">{{ tagObj.text }}</text>
+              <line x1="40" y1="84" x2="120" y2="84" stroke="currentColor" stroke-width="1.5" />
+              <text x="80" y="100" text-anchor="middle" font-family="Coolvetica" font-size="10" fill="currentColor">{{ getStampDate(tagObj.text) }}</text>
+            </svg>
+
+            <!-- Hexagonal Stamp -->
+            <svg
+              v-else-if="getStampStyle(tagObj.text, idx, tagObj.stampId).templateId === 'hexagon'"
+              viewBox="0 0 160 160"
+              class="stamp-svg stamp-svg--hexagon"
+            >
+              <polygon points="80,8 152,48 152,112 80,152 8,112 8,48" fill="none" stroke="currentColor" stroke-width="2.5" />
+              <polygon points="80,16 142,52 142,108 80,144 18,108 18,52" fill="none" stroke="currentColor" stroke-width="1" />
+              <text x="80" y="64" text-anchor="middle" font-family="Aroma" :font-size="getFontSize(tagObj.text, 20)" font-weight="bold" fill="currentColor">{{ tagObj.text.toUpperCase() }}</text>
+              <path d="M 80,72 L 83,80 L 95,84 L 83,85 L 82,93 L 87,96 L 80,95 L 73,96 L 78,93 L 77,85 L 65,84 L 77,80 Z" fill="currentColor" />
+              <text x="80" y="115" text-anchor="middle" font-family="Typewriter" font-size="10" fill="currentColor">{{ getStampDate(tagObj.text) }}</text>
+              <text x="80" y="130" text-anchor="middle" font-family="Typewriter" font-size="8" fill="currentColor" letter-spacing="1">DEPARTED</text>
+            </svg>
+
+            <!-- Triangular Stamp -->
+            <svg
+              v-else-if="getStampStyle(tagObj.text, idx, tagObj.stampId).templateId === 'triangle'"
+              viewBox="0 0 160 160"
+              class="stamp-svg stamp-svg--triangle"
+            >
+              <polygon points="80,12 152,138 8,138" fill="none" stroke="currentColor" stroke-width="2.5" />
+              <polygon points="80,24 140,130 20,130" fill="none" stroke="currentColor" stroke-width="1" />
+              <path d="M 80,35 L 82,41 L 91,44 L 82,45 L 81,51 L 85,53 L 80,52 L 75,53 L 79,51 L 78,45 L 69,44 L 78,41 Z" fill="currentColor" />
+              <text x="80" y="82" text-anchor="middle" font-family="Coolvetica" :font-size="getFontSize(tagObj.text, 24)" font-weight="bold" fill="currentColor">{{ tagObj.text }}</text>
+              <text x="80" y="102" text-anchor="middle" font-family="Coolvetica" font-size="10" fill="currentColor">{{ getStampDate(tagObj.text) }}</text>
+              <text x="80" y="122" text-anchor="middle" font-family="Coolvetica" font-size="8" letter-spacing="1" fill="currentColor">★ ARRIVED ★</text>
+            </svg>
+
+            <!-- Double Rectangle Stamp -->
+            <svg
+              v-else-if="getStampStyle(tagObj.text, idx, tagObj.stampId).templateId === 'double-rect'"
+              viewBox="0 0 200 120"
+              class="stamp-svg stamp-svg--double-rect"
+            >
+              <rect x="8" y="8" width="184" height="104" rx="14" ry="14" fill="none" stroke="currentColor" stroke-width="2.5"/>
+              <rect x="15" y="15" width="170" height="90" rx="9" ry="9" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="4,2"/>
+              <text x="100" y="32" text-anchor="middle" font-family="Coolvetica" font-size="8" fill="currentColor" letter-spacing="1.5">PORTFOLIO IMMIGRATION</text>
+              <text x="100" y="70" text-anchor="middle" font-family="Coolvetica" :font-size="getFontSize(tagObj.text, 34)" fill="currentColor" letter-spacing="1">{{ tagObj.text }}</text>
+              <path d="M 28,70 L 30,75 L 37,77 L 30,78 L 29,83 L 32,84 L 28,83 L 24,84 L 27,83 L 26,78 L 19,77 L 26,75 Z" fill="currentColor" transform="rotate(-45 28 75)" />
+              <text x="100" y="92" text-anchor="middle" font-family="Coolvetica" font-size="11" font-weight="bold" fill="currentColor">{{ getStampDate(tagObj.text) }}</text>
+            </svg>
+
+            <!-- Oval Stamp -->
+            <svg
+              v-else-if="getStampStyle(tagObj.text, idx, tagObj.stampId).templateId === 'oval'"
+              viewBox="0 0 200 120"
+              class="stamp-svg stamp-svg--oval"
+            >
+              <ellipse cx="100" cy="60" rx="90" ry="52" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5,4"/>
+              <ellipse cx="100" cy="60" rx="80" ry="43" fill="none" stroke="currentColor" stroke-width="1"/>
+              <text x="100" y="34" text-anchor="middle" font-family="Typewriter" font-size="8" fill="currentColor" letter-spacing="1.5">REPUBLIC OF CREATIVE</text>
+              <text x="100" y="66" text-anchor="middle" font-family="Romantic" :font-size="getFontSize(tagObj.text, 32)" font-style="italic" fill="currentColor">{{ tagObj.text }}</text>
+              <text x="100" y="88" text-anchor="middle" font-family="Typewriter" font-size="10" fill="currentColor">{{ getStampDate(tagObj.text) }}</text>
+              <text x="40" y="62" font-size="8" fill="currentColor">★</text>
+              <text x="160" y="62" font-size="8" fill="currentColor">★</text>
+            </svg>
+
+            <!-- Scalloped Stamp -->
+            <svg
+              v-else-if="getStampStyle(tagObj.text, idx, tagObj.stampId).templateId === 'scallop-rect'"
+              viewBox="0 0 200 120"
+              class="stamp-svg stamp-svg--scallop-rect"
+            >
+              <path d="M 10,10 Q 15,5 20,10 Q 25,5 30,10 Q 35,5 40,10 Q 45,5 50,10 Q 55,5 60,10 Q 65,5 70,10 Q 75,5 80,10 Q 85,5 90,10 Q 95,5 100,10 Q 105,5 110,10 Q 115,5 120,10 Q 125,5 130,10 Q 135,5 140,10 Q 145,5 150,10 Q 155,5 160,10 Q 165,5 170,10 Q 175,5 180,10 Q 185,5 190,10 Q 195,15 190,20 Q 195,25 190,30 Q 195,35 190,40 Q 195,45 190,50 Q 195,55 190,60 Q 195,65 190,70 Q 195,75 190,80 Q 195,85 190,90 Q 195,95 190,100 Q 195,105 190,110 Q 185,115 180,110 Q 175,115 170,110 Q 165,115 160,110 Q 155,115 150,110 Q 145,115 140,110 Q 135,115 130,110 Q 125,115 120,110 Q 115,115 110,110 Q 105,115 100,110 Q 95,115 90,110 Q 85,115 80,110 Q 75,115 70,110 Q 65,115 60,110 Q 55,115 50,110 Q 45,115 40,110 Q 35,115 30,110 Q 25,115 20,110 Q 15,115 10,110 Q 5,105 10,100 Q 5,95 10,90 Q 5,85 10,80 Q 5,75 10,70 Q 5,65 10,60 Q 5,55 10,50 Q 5,45 10,40 Q 5,35 10,30 Q 5,25 10,20 Q 5,15 10,10 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+              <rect x="18" y="18" width="164" height="84" rx="2" fill="none" stroke="currentColor" stroke-width="1"/>
+              <text x="100" y="58" text-anchor="middle" font-family="Brisket" :font-size="getFontSize(tagObj.text, 28)" fill="currentColor">{{ tagObj.text }}</text>
+              <text x="100" y="80" text-anchor="middle" font-family="Typewriter" font-size="10" fill="currentColor">{{ getStampDate(tagObj.text) }}</text>
+              <text x="100" y="94" text-anchor="middle" font-family="Typewriter" font-size="8" fill="currentColor" letter-spacing="1">CUSTOM VISA</text>
+            </svg>
+          </div>
+        </div>
 
       <!-- Passport side -->
       <div class="info-passport-wrapper">
@@ -140,6 +237,22 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- SVG Stamp Grunge Filter -->
+    <svg style="position: absolute; width: 0; height: 0;" width="0" height="0" aria-hidden="true">
+      <defs>
+        <filter id="stamp-grunge" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="4" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+          <feComponentTransfer in="displaced" result="textured">
+            <feFuncA type="linear" slope="0.9" />
+          </feComponentTransfer>
+          <feMerge>
+            <feMergeNode in="textured" />
+          </feMerge>
+        </filter>
+      </defs>
+    </svg>
   </section>
 </template>
 
@@ -178,6 +291,93 @@ const rightPhotos = computed(() => {
   const imgs = profile.value.popup_images || []
   return imgs.filter((_, i) => i % 2 !== 0)
 })
+
+// Split tags and parse possible stamp associations
+const parsedTags = computed(() => {
+  const rawTags = profile.value.tags || []
+  return rawTags.map(tagStr => {
+    if (tagStr.includes(':')) {
+      const parts = tagStr.split(':')
+      return {
+        text: parts[0],
+        stampId: parts[1] || null
+      }
+    }
+    return {
+      text: tagStr,
+      stampId: null
+    }
+  })
+})
+
+// Dynamic Stamp Design Logic
+const STAMP_TEMPLATES = [
+  { id: 'circle', color: 'rgba(45, 98, 143, 0.82)' },        // Ink Blue
+  { id: 'hexagon', color: 'rgba(162, 59, 50, 0.82)' },       // Red Ink
+  { id: 'triangle', color: 'rgba(43, 109, 69, 0.82)' },       // Emerald Green
+  { id: 'double-rect', color: 'rgba(173, 90, 45, 0.82)' },    // Orange/Rust
+  { id: 'oval', color: 'rgba(27, 54, 93, 0.82)' },           // Vintage Navy
+  { id: 'scallop-rect', color: 'rgba(146, 60, 94, 0.82)' }    // Pink/Magenta
+]
+
+const getStampStyle = (tag, index, chosenStampId) => {
+  if (!tag) return { templateId: 'circle', style: {} }
+  
+  let template
+  if (chosenStampId) {
+    template = STAMP_TEMPLATES.find(t => t.id === chosenStampId) || STAMP_TEMPLATES[index % STAMP_TEMPLATES.length]
+  } else {
+    const templateIdx = index % STAMP_TEMPLATES.length
+    template = STAMP_TEMPLATES[templateIdx]
+  }
+  
+  // Create deterministic hash from tag name
+  let hash = 0
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  
+  // Rotation between -10 and +10 degrees
+  const rotation = (Math.abs(hash) % 21) - 10
+  
+  // Slight offsets to make it look scattered manually
+  const tx = (Math.abs(hash) % 11) - 5
+  const ty = (Math.abs(hash >> 3) % 11) - 5
+  
+  return {
+    templateId: template.id,
+    style: {
+      color: template.color,
+      transform: `rotate(${rotation}deg) translate(${tx}px, ${ty}px)`
+    }
+  }
+}
+
+// Generate a deterministic past travel date for each tag
+const getStampDate = (tag) => {
+  if (!tag) return ''
+  let hash = 0
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  hash = Math.abs(hash)
+  
+  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+  const month = months[hash % months.length]
+  const day = (hash % 28) + 1
+  const year = 2017 + (hash % 10) // years from 2017 to 2026
+  
+  return `${day.toString().padStart(2, '0')} ${month} ${year}`
+}
+
+// Dynamic text sizing method to prevent overflow
+const getFontSize = (tag, baseSize) => {
+  if (!tag) return baseSize
+  if (tag.length > 7) {
+    return Math.max(12, baseSize - (tag.length - 7) * 1.5)
+  }
+  return baseSize
+}
 
 const openPopup = () => {
   popupOpen.value = true
@@ -274,11 +474,14 @@ onMounted(async () => {
 
 /* ===== CONTENT ===== */
 .info-content {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  grid-template-areas:
+    "text passport"
+    "stamps passport";
+  gap: 0 4rem;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
-  gap: 4rem;
   position: relative;
   z-index: 1;
   opacity: 0;
@@ -293,7 +496,7 @@ onMounted(async () => {
 
 /* ===== TEXT SIDE ===== */
 .info-text {
-  flex: 1 1 auto;
+  grid-area: text;
   max-width: 600px;
 }
 
@@ -389,34 +592,49 @@ onMounted(async () => {
   margin-bottom: 28px;
 }
 
-/* Badges */
-.info-badges {
+/* Stamps Container & Wrappers */
+.info-stamps-container {
+  grid-area: stamps;
   display: flex;
-  gap: 10px;
+  gap: 20px 30px;
   flex-wrap: wrap;
+  margin-top: 32px;
+  padding: 15px 0;
+  justify-content: flex-start;
 }
 
-.badge {
-  background: rgba(233, 222, 202);
-  border: 1.5px solid rgba(128, 20, 36, 0.18);
-  color: #801424;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 0.88rem;
-  font-family: 'Typewriter', sans-serif;
-  transition: all 0.3s ease;
+.stamp-wrapper {
+  position: relative;
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
   cursor: default;
+  filter: url(#stamp-grunge);
+  text-shadow: 0.5px 0.5px 0.5px currentColor;
+  user-select: none;
 }
 
-.badge:hover {
-  background: rgba(128, 20, 36, 0.15);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(128, 20, 36, 0.15);
+.stamp-wrapper:hover {
+  filter: url(#stamp-grunge) drop-shadow(0 6px 14px rgba(74, 34, 30, 0.15));
+  transform: scale(1.08) rotate(3deg) !important;
+  z-index: 10;
 }
+
+/* Individual stamp sizes */
+.stamp-svg {
+  display: block;
+  height: auto;
+}
+
+.stamp-svg--circle { width: 110px; }
+.stamp-svg--hexagon { width: 110px; }
+.stamp-svg--triangle { width: 115px; }
+.stamp-svg--double-rect { width: 130px; }
+.stamp-svg--oval { width: 130px; }
+.stamp-svg--scallop-rect { width: 130px; }
 
 /* ===== PASSPORT SIDE ===== */
 .info-passport-wrapper {
-  flex: 0 0 auto;
+  grid-area: passport;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -753,11 +971,17 @@ onMounted(async () => {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
   .info-content {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "text"
+      "passport"
+      "stamps";
     text-align: center;
     gap: 3rem;
   }
   .info-text {
+    grid-area: text;
     max-width: 100%;
   }
   .info-name::after {
@@ -765,7 +989,10 @@ onMounted(async () => {
     transform: translateX(-50%);
   }
   .info-divider { justify-content: center; }
-  .info-badges { justify-content: center; }
+  .info-stamps-container {
+    grid-area: stamps;
+    justify-content: center;
+  }
 
   /* Passport popup responsive */
   .popup-layout {
