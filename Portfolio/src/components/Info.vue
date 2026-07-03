@@ -182,18 +182,7 @@
               >
                 <img :src="img" :alt="'Photo ' + (idx + 1)" />
               </div>
-              <!-- Placeholder frames if no images -->
-              <template v-if="leftPhotos.length === 0">
-                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(-8deg)">
-                  <span>📷</span>
-                </div>
-                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(5deg)">
-                  <span>📷</span>
-                </div>
-                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(-3deg)">
-                  <span>📷</span>
-                </div>
-              </template>
+
             </div>
 
             <!-- CENTER text column -->
@@ -219,18 +208,7 @@
               >
                 <img :src="img" :alt="'Photo ' + (leftPhotos.length + idx + 1)" />
               </div>
-              <!-- Placeholder frames if no images -->
-              <template v-if="rightPhotos.length === 0">
-                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(7deg)">
-                  <span>📷</span>
-                </div>
-                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(-4deg)">
-                  <span>📷</span>
-                </div>
-                <div class="popup-photo-card popup-photo-placeholder" style="transform: rotate(10deg)">
-                  <span>📷</span>
-                </div>
-              </template>
+
             </div>
 
           </div>
@@ -790,7 +768,7 @@ onMounted(async () => {
 .passport-popup {
   position: relative;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1400px;
   max-height: 90vh;
   background: linear-gradient(160deg, #fdf6f0 0%, #fef9f5 60%, #fff0e8 100%);
   border-radius: 20px;
@@ -800,7 +778,7 @@ onMounted(async () => {
     0 0 0 1px rgba(255,255,255,0.6) inset;
   overflow: hidden;
   overflow-y: auto;
-  padding: 48px 40px 52px;
+  padding: 48px 52px 52px;
   transform: scale(0.9) translateY(30px);
   opacity: 0;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
@@ -865,8 +843,8 @@ onMounted(async () => {
 /* ===== THREE-COLUMN LAYOUT ===== */
 .popup-layout {
   display: grid;
-  grid-template-columns: 160px 1fr 160px;
-  gap: 28px;
+  grid-template-columns: 180px 1fr 180px;
+  gap: 36px;
   align-items: start;
   min-height: 400px;
 }
@@ -938,8 +916,40 @@ onMounted(async () => {
   color: #3a2020;
 }
 
+.popup-rich-text :deep(.ql-editor img) {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+
+/* Preserve animated GIFs */
+.popup-rich-text :deep(.ql-editor img[src^="data:image/gif"]),
+.popup-rich-text :deep(.ql-editor img[src$=".gif"]) {
+  object-fit: contain;
+}
+
+/* Font size support from Quill size format */
+.popup-rich-text :deep(.ql-editor span[style*="font-size"]) {
+  line-height: 1.4;
+}
+
+/* Paragraph spacing */
 .popup-rich-text :deep(.ql-editor p) {
   margin-bottom: 1em;
+}
+
+/* Responsive YouTube iframes — resizable via BlotFormatter handles */
+.popup-rich-text :deep(.ql-video) {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 6px;
+  margin: 14px 0;
+  resize: both;
+  overflow: auto;
+  min-width: 200px;
+  min-height: 112px;
 }
 
 .popup-rich-text :deep(.ql-editor h1),

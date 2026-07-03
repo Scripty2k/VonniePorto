@@ -106,7 +106,7 @@ onMounted(async () => {
   align-items: flex-start;
   min-height: 100vh;
   background-color: #faf6f0;
-  padding: 60px 20px;
+  padding: 60px 40px;
 }
 
 .loading-state, .error-state {
@@ -139,9 +139,9 @@ onMounted(async () => {
   background-color: #fffdf9;
   border: 2px solid #4a2c2a;
   border-radius: 16px;
-  max-width: 800px;
+  max-width: 100%;
   width: 100%;
-  padding: 48px 44px;
+  padding: 48px 60px;
   box-shadow: 0 16px 48px rgba(74, 44, 42, 0.1);
   position: relative;
 }
@@ -247,9 +247,21 @@ onMounted(async () => {
 .project-content :deep(.ql-editor img) {
   max-width: 100%;
   height: auto;
+  display: inline-block;
 }
 
-/* Responsive YouTube iframes */
+/* Preserve animated GIFs */
+.project-content :deep(.ql-editor img[src^="data:image/gif"]),
+.project-content :deep(.ql-editor img[src$=".gif"]) {
+  object-fit: contain;
+}
+
+/* Font size support from Quill size format */
+.project-content :deep(.ql-editor span[style*="font-size"]) {
+  line-height: 1.4;
+}
+
+/* Responsive YouTube iframes — resizable via BlotFormatter handles */
 .project-content :deep(.ql-video) {
   display: block;
   width: 100%;
@@ -257,6 +269,10 @@ onMounted(async () => {
   border: none;
   border-radius: 6px;
   margin: 14px 0;
+  resize: both;
+  overflow: auto;
+  min-width: 200px;
+  min-height: 112px;
 }
 
 /* Text alignment */

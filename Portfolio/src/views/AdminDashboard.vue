@@ -824,6 +824,11 @@ class CustomImageFormat extends BaseImageFormat {
 Quill.register(CustomImageFormat, true);
 Quill.register('modules/blotFormatter', BlotFormatter);
 
+// Register font sizes
+const Size = Quill.import('attributors/style/size');
+Size.whitelist = ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px', '64px'];
+Quill.register(Size, true);
+
 const phrases = [
   "Hello vonneh :3",
   "HAIIII",
@@ -913,6 +918,56 @@ const profileTagsList = ref([])
 let quillEditor = null       // profile popup editor
 let tarotQuillEditor = null  // tarot card editor
 
+// Upload a file to Supabase Storage and return its public URL.
+// The bucket "quill-media" must exist (public) in your Supabase project.
+const uploadImageToStorage = async (file) => {
+  const ext = file.name.split('.').pop() || 'gif'
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const { data, error } = await supabase
+    .storage
+    .from('quill-media')
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type
+    })
+  if (error) throw error
+  const { data: publicData } = supabase.storage.from('quill-media').getPublicUrl(data.path)
+  return publicData.publicUrl
+}
+
+// Image handler: uploads to Supabase Storage so GIFs (and all images) are
+// served as real files — avoiding the base64 truncation that makes GIFs static.
+const makeImageHandler = (quillInstance) => () => {
+  const input = document.createElement('input')
+  input.setAttribute('type', 'file')
+  input.setAttribute('accept', 'image/*,image/gif')
+  input.click()
+  input.onchange = async () => {
+    const file = input.files[0]
+    if (!file) return
+
+    // Try Supabase Storage first (preserves full GIF data)
+    try {
+      const url = await uploadImageToStorage(file)
+      const range = quillInstance.getSelection(true)
+      quillInstance.insertEmbed(range.index, 'image', url, 'user')
+      quillInstance.setSelection(range.index + 1, 0)
+    } catch (err) {
+      console.warn('Supabase Storage upload failed, falling back to data URL:', err.message)
+      // Fallback: embed as data URL (works for small images)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const range = quillInstance.getSelection(true)
+        quillInstance.insertEmbed(range.index, 'image', e.target.result, 'user')
+        quillInstance.setSelection(range.index + 1, 0)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+}
+
+
 // Helper: convert any YouTube URL to an embed URL
 const convertToYouTubeEmbed = (url) => {
   if (!url) return null
@@ -954,6 +1009,7 @@ const initQuill = async () => {
     placeholder: 'Write something beautiful about yourself...',
     modules: {
       toolbar: [
+        [{ size: ['10px', '12px', '14px', false, '18px', '20px', '24px', '28px', '32px', '36px', '48px', '64px'] }],
         [{ header: [1, 2, 3, false] }],
         ['bold', 'italic', 'underline'],
         [{ align: [] }],
@@ -966,8 +1022,11 @@ const initQuill = async () => {
     }
   })
 
-  // Custom YouTube video handler
+  // Custom image handler – supports GIF
   const popupToolbar = quillEditor.getModule('toolbar')
+  popupToolbar.addHandler('image', makeImageHandler(quillEditor))
+
+  // Custom YouTube video handler
   popupToolbar.addHandler('video', () => {
     const url = prompt('Paste a YouTube video URL:')
     const embedUrl = convertToYouTubeEmbed(url)
@@ -1007,6 +1066,7 @@ const initTarotQuill = async () => {
     placeholder: 'Describe this project — process, tools, story...',
     modules: {
       toolbar: [
+        [{ size: ['10px', '12px', '14px', false, '18px', '20px', '24px', '28px', '32px', '36px', '48px', '64px'] }],
         [{ header: [1, 2, 3, false] }],
         ['bold', 'italic', 'underline'],
         [{ align: [] }],
@@ -1019,8 +1079,11 @@ const initTarotQuill = async () => {
     }
   })
 
-  // Custom YouTube video handler
+  // Custom image handler – supports GIF
   const tarotToolbar = tarotQuillEditor.getModule('toolbar')
+  tarotToolbar.addHandler('image', makeImageHandler(tarotQuillEditor))
+
+  // Custom YouTube video handler
   tarotToolbar.addHandler('video', () => {
     const url = prompt('Paste a YouTube video URL:')
     const embedUrl = convertToYouTubeEmbed(url)

@@ -111,11 +111,7 @@
                 >
                   <img :src="img" :alt="'Photo ' + (idx + 1)" />
                 </div>
-                <template v-if="leftPhotos.length === 0">
-                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(-7deg)"><span>📷</span></div>
-                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(5deg)"><span>📷</span></div>
-                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(-3deg)"><span>📷</span></div>
-                </template>
+
               </div>
 
               <!-- CENTER rich text -->
@@ -153,11 +149,7 @@
                 >
                   <img :src="img" :alt="'Photo ' + (leftPhotos.length + idx + 1)" />
                 </div>
-                <template v-if="rightPhotos.length === 0">
-                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(8deg)"><span>📷</span></div>
-                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(-5deg)"><span>📷</span></div>
-                  <div class="card-popup-photo card-popup-photo--placeholder" style="transform: rotate(4deg)"><span>📷</span></div>
-                </template>
+
               </div>
 
             </div>
@@ -764,14 +756,14 @@ const handleCardClick = (project) => {
 .card-popup {
   position: relative;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1400px;
   max-height: 92vh;
   background: linear-gradient(160deg, #fdf6f0 0%, #fef9f5 60%, #fff0e8 100%);
   border-radius: 22px;
   border: 1.5px solid rgba(201, 160, 99, 0.3);
   overflow: hidden;
   overflow-y: auto;
-  padding: 52px 44px 56px;
+  padding: 52px 52px 56px;
   transform: scale(0.88) translateY(36px);
   opacity: 0;
   transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
@@ -860,8 +852,8 @@ const handleCardClick = (project) => {
 /* Three-column layout */
 .card-popup-layout {
   display: grid;
-  grid-template-columns: 155px 1fr 155px;
-  gap: 28px;
+  grid-template-columns: 175px 1fr 175px;
+  gap: 36px;
   align-items: start;
 }
 
@@ -933,9 +925,21 @@ const handleCardClick = (project) => {
 .card-popup-rich-text :deep(.ql-editor img) {
   max-width: 100%;
   height: auto;
+  display: inline-block;
 }
 
-/* Responsive YouTube iframes */
+/* Preserve animated GIFs */
+.card-popup-rich-text :deep(.ql-editor img[src^="data:image/gif"]),
+.card-popup-rich-text :deep(.ql-editor img[src$=".gif"]) {
+  object-fit: contain;
+}
+
+/* Font size support from Quill size format */
+.card-popup-rich-text :deep(.ql-editor span[style*="font-size"]) {
+  line-height: 1.4;
+}
+
+/* Responsive YouTube iframes — resizable via BlotFormatter handles */
 .card-popup-rich-text :deep(.ql-video) {
   display: block;
   width: 100%;
@@ -943,6 +947,10 @@ const handleCardClick = (project) => {
   border: none;
   border-radius: 6px;
   margin: 14px 0;
+  resize: both;
+  overflow: auto;
+  min-width: 200px;
+  min-height: 112px;
 }
 
 /* Text alignment */
