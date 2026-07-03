@@ -213,7 +213,7 @@
                     />
                     Upload Card Back Image
                   </label>
-                  <small class="help-text">JPEG/PNG, up to 2MB. Recommended size: 250×416px.</small>
+                  <small class="help-text">JPEG/PNG, up to 20MB. Recommended size: 250×416px.</small>
                 </div>
 
                 <div v-if="notification" :class="['notification-banner', notification.type]">
@@ -306,7 +306,7 @@
                   />
                   + Add Photos (Multiple)
                 </label>
-                <small class="help-text">JPEG/PNG, up to 2MB each.</small>
+                <small class="help-text">JPEG/PNG, up to 20MB each.</small>
               </div>
 
               <div v-if="projectForm.project_images && projectForm.project_images.length > 0" class="popup-gallery-grid" style="margin-top: 16px;">
@@ -668,7 +668,7 @@
                       />
                       Choose Photo
                     </label>
-                    <small class="help-text">JPEG/PNG formatted file, maximum size 2MB</small>
+                    <small class="help-text">JPEG/PNG formatted file, maximum size 20MB</small>
                   </div>
 
                   <div class="passport-actions">
@@ -743,7 +743,7 @@
                     />
                     + Add Photos (Multiple)
                   </label>
-                  <small class="help-text">JPEG/PNG, up to 2MB each. Images alternate left/right in the popup.</small>
+                  <small class="help-text">JPEG/PNG, up to 20MB each. Images alternate left/right in the popup.</small>
                 </div>
 
                 <!-- Gallery preview grid -->
@@ -790,6 +790,39 @@ import { supabase } from '../supabase.js'
 import passportTemplate from '../assets/images/passport.png'
 import Quill from 'quill'
 import 'quill/dist/quill.snow.css'
+import BlotFormatter from '@enzedonline/quill-blot-formatter2'
+import '@enzedonline/quill-blot-formatter2/dist/css/quill-blot-formatter2.css'
+
+const BaseImageFormat = Quill.import('formats/image');
+class CustomImageFormat extends BaseImageFormat {
+  static formats(domNode) {
+    const formats = super.formats(domNode) || {};
+    if (domNode.hasAttribute('style')) {
+      formats.style = domNode.getAttribute('style');
+    }
+    if (domNode.hasAttribute('width')) {
+      formats.width = domNode.getAttribute('width');
+    }
+    if (domNode.hasAttribute('height')) {
+      formats.height = domNode.getAttribute('height');
+    }
+    return formats;
+  }
+
+  format(name, value) {
+    if (['style', 'width', 'height'].includes(name)) {
+      if (value) {
+        this.domNode.setAttribute(name, value);
+      } else {
+        this.domNode.removeAttribute(name);
+      }
+    } else {
+      super.format(name, value);
+    }
+  }
+}
+Quill.register(CustomImageFormat, true);
+Quill.register('modules/blotFormatter', BlotFormatter);
 
 const phrases = [
   "Hello vonneh :3",
@@ -880,6 +913,21 @@ const profileTagsList = ref([])
 let quillEditor = null       // profile popup editor
 let tarotQuillEditor = null  // tarot card editor
 
+// Helper: convert any YouTube URL to an embed URL
+const convertToYouTubeEmbed = (url) => {
+  if (!url) return null
+  // Already an embed URL
+  if (url.includes('youtube.com/embed/')) return url
+  // youtube.com/watch?v=ID
+  let match = url.match(/[?&]v=([^&]+)/)
+  if (match) return `https://www.youtube.com/embed/${match[1]}`
+  // youtu.be/ID
+  match = url.match(/youtu\.be\/([^?]+)/)
+  if (match) return `https://www.youtube.com/embed/${match[1]}`
+  // Return as-is for other embeddable URLs
+  return url
+}
+
 // Initialize profile Quill editor
 const initQuill = async () => {
   await nextTick()
@@ -908,10 +956,25 @@ const initQuill = async () => {
       toolbar: [
         [{ header: [1, 2, 3, false] }],
         ['bold', 'italic', 'underline'],
+        [{ align: [] }],
         [{ list: 'ordered' }, { list: 'bullet' }],
         ['blockquote'],
+        ['image', 'video'],
         ['clean']
-      ]
+      ],
+      blotFormatter: {}
+    }
+  })
+
+  // Custom YouTube video handler
+  const popupToolbar = quillEditor.getModule('toolbar')
+  popupToolbar.addHandler('video', () => {
+    const url = prompt('Paste a YouTube video URL:')
+    const embedUrl = convertToYouTubeEmbed(url)
+    if (embedUrl) {
+      const range = quillEditor.getSelection(true)
+      quillEditor.insertEmbed(range.index, 'video', embedUrl, 'user')
+      quillEditor.setSelection(range.index + 1, 0)
     }
   })
 
@@ -946,10 +1009,25 @@ const initTarotQuill = async () => {
       toolbar: [
         [{ header: [1, 2, 3, false] }],
         ['bold', 'italic', 'underline'],
+        [{ align: [] }],
         [{ list: 'ordered' }, { list: 'bullet' }],
         ['blockquote'],
+        ['image', 'video'],
         ['clean']
-      ]
+      ],
+      blotFormatter: {}
+    }
+  })
+
+  // Custom YouTube video handler
+  const tarotToolbar = tarotQuillEditor.getModule('toolbar')
+  tarotToolbar.addHandler('video', () => {
+    const url = prompt('Paste a YouTube video URL:')
+    const embedUrl = convertToYouTubeEmbed(url)
+    if (embedUrl) {
+      const range = tarotQuillEditor.getSelection(true)
+      tarotQuillEditor.insertEmbed(range.index, 'video', embedUrl, 'user')
+      tarotQuillEditor.setSelection(range.index + 1, 0)
     }
   })
 
@@ -1100,10 +1178,10 @@ const handleProjectImageUpload = (event) => {
   const files = Array.from(event.target.files)
   if (!files.length) return
 
-  const maxSize = 2 * 1024 * 1024
+  const maxSize = 20 * 1024 * 1024
   const validFiles = files.filter(f => {
     if (f.size > maxSize) {
-      showNotification(`"${f.name}" exceeds 2MB and was skipped.`, 'error')
+      showNotification(`"${f.name}" exceeds 20MB and was skipped.`, 'error')
       return false
     }
     return true
@@ -1166,8 +1244,8 @@ const handleCardBackUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  if (file.size > 2 * 1024 * 1024) {
-    showNotification('Card back image must be smaller than 2MB', 'error')
+  if (file.size > 20 * 1024 * 1024) {
+    showNotification('Card back image must be smaller than 20MB', 'error')
     return
   }
 
@@ -1559,10 +1637,10 @@ const handlePopupImageUpload = (event) => {
   const files = Array.from(event.target.files)
   if (!files.length) return
 
-  const maxSize = 2 * 1024 * 1024
+  const maxSize = 20 * 1024 * 1024
   const validFiles = files.filter(f => {
     if (f.size > maxSize) {
-      showNotification(`"${f.name}" exceeds 2MB and was skipped.`, 'error')
+      showNotification(`"${f.name}" exceeds 20MB and was skipped.`, 'error')
       return false
     }
     return true
@@ -1590,9 +1668,9 @@ const handleImageUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  // Verify file size limit (2MB)
-  if (file.size > 2 * 1024 * 1024) {
-    showNotification('Photo must be smaller than 2MB', 'error')
+  // Verify file size limit (20MB)
+  if (file.size > 20 * 1024 * 1024) {
+    showNotification('Photo must be smaller than 20MB', 'error')
     return
   }
 
@@ -2436,6 +2514,21 @@ onMounted(() => {
   color: var(--text-hint);
   font-style: italic;
 }
+
+/* Responsive embedded videos (YouTube iframes) */
+:deep(.ql-video) {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 4px;
+  margin: 12px 0;
+}
+
+/* Text alignment support */
+:deep(.ql-align-center) { text-align: center; }
+:deep(.ql-align-right)  { text-align: right; }
+:deep(.ql-align-justify) { text-align: justify; }
 
 /* Gallery grid */
 .popup-gallery-grid {

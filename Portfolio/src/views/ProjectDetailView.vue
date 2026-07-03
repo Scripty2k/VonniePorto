@@ -236,7 +236,6 @@ onMounted(async () => {
   border: none !important;
 }
 
-/* Override Quill container borders for clean look */
 .project-content :deep(.ql-editor) {
   padding: 0;
   font-family: 'Times New Roman', 'Georgia', serif;
@@ -244,6 +243,26 @@ onMounted(async () => {
   line-height: 1.85;
   color: #2b1f1e;
 }
+
+.project-content :deep(.ql-editor img) {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive YouTube iframes */
+.project-content :deep(.ql-video) {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 6px;
+  margin: 14px 0;
+}
+
+/* Text alignment */
+.project-content :deep(.ql-align-center)  { text-align: center; }
+.project-content :deep(.ql-align-right)   { text-align: right; }
+.project-content :deep(.ql-align-justify) { text-align: justify; }
 
 .project-content :deep(.ql-editor p) { margin-bottom: 1em; }
 

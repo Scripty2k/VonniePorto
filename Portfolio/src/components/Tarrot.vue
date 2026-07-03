@@ -930,6 +930,26 @@ const handleCardClick = (project) => {
   color: #3a2020;
 }
 
+.card-popup-rich-text :deep(.ql-editor img) {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive YouTube iframes */
+.card-popup-rich-text :deep(.ql-video) {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 6px;
+  margin: 14px 0;
+}
+
+/* Text alignment */
+.card-popup-rich-text :deep(.ql-align-center)  { text-align: center; }
+.card-popup-rich-text :deep(.ql-align-right)   { text-align: right; }
+.card-popup-rich-text :deep(.ql-align-justify) { text-align: justify; }
+
 .card-popup-rich-text :deep(.ql-editor p) {
   margin-bottom: 1em;
 }
