@@ -31,13 +31,16 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHashHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(),
   routes,
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
       return savedPosition
     }
-    if (to.hash) {
+    // In hash history mode, to.hash is a real in-page anchor (e.g. #section),
+    // NOT the route path (that's handled by the router itself).
+    // Only scroll to element if it looks like a valid element ID anchor.
+    if (to.hash && !to.hash.startsWith('#/')) {
       return { el: to.hash, behavior: 'smooth' }
     }
     return { top: 0, behavior: 'smooth' }
