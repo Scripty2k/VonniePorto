@@ -838,8 +838,8 @@ const handleCardClick = (project) => {
   font-size: 1.05rem;
   color: #6e5452;
   text-align: center;
-  font-style: italic;
   margin-bottom: 0;
+  font-family: 'Coolvetica', sans-serif;
 }
 
 /* Gold divider */

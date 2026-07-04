@@ -180,7 +180,7 @@ html {
 
 body {
   font-family: 'Brisket', sans-serif;
-  background-color: #9e7a73;
+  background-color: #f7e9d2;
   overflow-x: hidden;
 }
 

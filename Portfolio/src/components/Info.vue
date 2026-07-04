@@ -107,9 +107,9 @@
             >
               <ellipse cx="100" cy="60" rx="90" ry="52" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5,4"/>
               <ellipse cx="100" cy="60" rx="80" ry="43" fill="none" stroke="currentColor" stroke-width="1"/>
-              <text x="100" y="34" text-anchor="middle" font-family="Typewriter" font-size="8" fill="currentColor" letter-spacing="1.5">REPUBLIC OF CREATIVE</text>
-              <text x="100" y="66" text-anchor="middle" font-family="Romantic" :font-size="getFontSize(tagObj.text, 32)" font-style="italic" fill="currentColor">{{ tagObj.text }}</text>
-              <text x="100" y="88" text-anchor="middle" font-family="Typewriter" font-size="10" fill="currentColor">{{ getStampDate(tagObj.text) }}</text>
+              <text x="100" y="34" text-anchor="middle" font-family="Coolvetica" font-size="8" fill="currentColor" letter-spacing="1.5">REPUBLIC OF CREATIVE</text>
+              <text x="100" y="66" text-anchor="middle" font-family="Coolvetica" :font-size="getFontSize(tagObj.text, 32)" font-style="italic" fill="currentColor">{{ tagObj.text }}</text>
+              <text x="100" y="88" text-anchor="middle" font-family="Coolvetica" font-size="10" fill="currentColor">{{ getStampDate(tagObj.text) }}</text>
               <text x="40" y="62" font-size="8" fill="currentColor">★</text>
               <text x="160" y="62" font-size="8" fill="currentColor">★</text>
             </svg>
@@ -122,9 +122,9 @@
             >
               <path d="M 10,10 Q 15,5 20,10 Q 25,5 30,10 Q 35,5 40,10 Q 45,5 50,10 Q 55,5 60,10 Q 65,5 70,10 Q 75,5 80,10 Q 85,5 90,10 Q 95,5 100,10 Q 105,5 110,10 Q 115,5 120,10 Q 125,5 130,10 Q 135,5 140,10 Q 145,5 150,10 Q 155,5 160,10 Q 165,5 170,10 Q 175,5 180,10 Q 185,5 190,10 Q 195,15 190,20 Q 195,25 190,30 Q 195,35 190,40 Q 195,45 190,50 Q 195,55 190,60 Q 195,65 190,70 Q 195,75 190,80 Q 195,85 190,90 Q 195,95 190,100 Q 195,105 190,110 Q 185,115 180,110 Q 175,115 170,110 Q 165,115 160,110 Q 155,115 150,110 Q 145,115 140,110 Q 135,115 130,110 Q 125,115 120,110 Q 115,115 110,110 Q 105,115 100,110 Q 95,115 90,110 Q 85,115 80,110 Q 75,115 70,110 Q 65,115 60,110 Q 55,115 50,110 Q 45,115 40,110 Q 35,115 30,110 Q 25,115 20,110 Q 15,115 10,110 Q 5,105 10,100 Q 5,95 10,90 Q 5,85 10,80 Q 5,75 10,70 Q 5,65 10,60 Q 5,55 10,50 Q 5,45 10,40 Q 5,35 10,30 Q 5,25 10,20 Q 5,15 10,10 Z" fill="none" stroke="currentColor" stroke-width="2"/>
               <rect x="18" y="18" width="164" height="84" rx="2" fill="none" stroke="currentColor" stroke-width="1"/>
-              <text x="100" y="58" text-anchor="middle" font-family="Brisket" :font-size="getFontSize(tagObj.text, 28)" fill="currentColor">{{ tagObj.text }}</text>
-              <text x="100" y="80" text-anchor="middle" font-family="Typewriter" font-size="10" fill="currentColor">{{ getStampDate(tagObj.text) }}</text>
-              <text x="100" y="94" text-anchor="middle" font-family="Typewriter" font-size="8" fill="currentColor" letter-spacing="1">CUSTOM VISA</text>
+              <text x="100" y="58" text-anchor="middle" font-family="Coolvetica" :font-size="getFontSize(tagObj.text, 35)" fill="currentColor">{{ tagObj.text }}</text>
+              <text x="100" y="80" text-anchor="middle" font-family="Coolvetica" font-size="10" fill="currentColor">{{ getStampDate(tagObj.text) }}</text>
+              <text x="100" y="94" text-anchor="middle" font-family="Coolvetica" font-size="8" fill="currentColor" letter-spacing="1">CUSTOM VISA</text>
             </svg>
           </div>
         </div>
