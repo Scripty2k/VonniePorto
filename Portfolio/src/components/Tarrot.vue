@@ -262,7 +262,7 @@ const fetchProjects = async () => {
   try {
     const { data, error } = await supabase
       .from('projects')
-      .select('*')
+      .select('id, title, description, link_url, card_back_image, created_at')
       .order('created_at', { ascending: false })
 
     if (error) throw error
