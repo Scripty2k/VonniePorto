@@ -59,7 +59,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { supabase } from '../supabase.js'
+import { databases, DATABASE_ID, COLLECTIONS } from '../appwrite.js'
 import 'quill/dist/quill.snow.css'
 
 const props = defineProps({
@@ -82,14 +82,8 @@ const formattedContent = computed(() => {
 
 onMounted(async () => {
   try {
-    const { data, error: fetchError } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', props.id)
-      .single()
-
-    if (fetchError) throw fetchError
-    project.value = data
+    const docSnap = await databases.getDocument(DATABASE_ID, COLLECTIONS.PROJECTS, props.id)
+    project.value = { id: docSnap.$id, ...docSnap }
   } catch (err) {
     console.error('Error fetching project:', err)
     error.value = 'Failed to load project details.'

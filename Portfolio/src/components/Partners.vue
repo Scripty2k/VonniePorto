@@ -19,7 +19,8 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { supabase } from '../supabase.js'
+import { databases, DATABASE_ID, COLLECTIONS } from '../appwrite.js'
+import { Query } from 'appwrite'
 
 const sectionEl = ref(null)
 const isVisible = ref(false)
@@ -31,15 +32,12 @@ const doubledPartners = computed(() => {
 
 const fetchPartners = async () => {
   try {
-    const { data, error } = await supabase
-      .from('partners')
-      .select('name')
-      .order('created_at', { ascending: true })
-
-    if (error) throw error
-    if (data) {
-      partners.value = data.map(p => p.name)
-    }
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTIONS.PARTNERS,
+      [Query.orderAsc('created_at')]
+    )
+    partners.value = response.documents.map(p => p.name)
   } catch (err) {
     console.error('Error fetching partners:', err)
   }

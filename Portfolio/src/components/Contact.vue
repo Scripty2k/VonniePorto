@@ -46,7 +46,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { supabase } from '../supabase.js'
+import { databases, DATABASE_ID, COLLECTIONS } from '../appwrite.js'
+import { Query } from 'appwrite'
 
 const sectionEl = ref(null)
 const isVisible = ref(false)
@@ -54,13 +55,12 @@ const socials = ref([])
 
 const fetchSocials = async () => {
   try {
-    const { data, error } = await supabase
-      .from('socials')
-      .select('*')
-      .order('sort_order', { ascending: true })
-
-    if (error) throw error
-    socials.value = data || []
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTIONS.SOCIALS,
+      [Query.orderAsc('sort_order')]
+    )
+    socials.value = response.documents
   } catch (err) {
     console.error('Error loading socials:', err)
   }

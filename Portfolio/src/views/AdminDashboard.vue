@@ -777,7 +777,6 @@
             </div>
           </section>
         </template>
-
       </main>
     </div>
   </div>
@@ -786,7 +785,8 @@
 <script setup>
 import { ref, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { supabase } from '../supabase.js'
+import { account, databases, storage, DATABASE_ID, BUCKET_ID, COLLECTIONS } from '../appwrite.js'
+import { ID, Query } from 'appwrite'
 import passportTemplate from '../assets/images/passport.png'
 import Quill from 'quill'
 import 'quill/dist/quill.snow.css'
@@ -918,26 +918,20 @@ const profileTagsList = ref([])
 let quillEditor = null       // profile popup editor
 let tarotQuillEditor = null  // tarot card editor
 
-// Upload a file to Supabase Storage and return its public URL.
-// The bucket "quill-media" must exist (public) in your Supabase project.
-const uploadImageToStorage = async (file) => {
-  const ext = file.name.split('.').pop() || 'gif'
-  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-  const { data, error } = await supabase
-    .storage
-    .from('quill-media')
-    .upload(fileName, file, {
-      cacheControl: '3600',
-      upsert: false,
-      contentType: file.type
-    })
-  if (error) throw error
-  const { data: publicData } = supabase.storage.from('quill-media').getPublicUrl(data.path)
-  return publicData.publicUrl
+// Upload helper: uploads to Appwrite Storage and returns download/view URL
+const uploadFileToStorage = async (file, folder) => {
+  const response = await storage.createFile(BUCKET_ID, ID.unique(), file)
+  const fileUrl = storage.getFileView(BUCKET_ID, response.$id)
+  return fileUrl.href
 }
 
-// Image handler: uploads to Supabase Storage so GIFs (and all images) are
-// served as real files — avoiding the base64 truncation that makes GIFs static.
+// Upload a file to Firebase Storage (wrapper for Quill editor compatibility)
+const uploadImageToStorage = async (file) => {
+  return await uploadFileToStorage(file, 'quill-media')
+}
+
+// Image handler: uploads to Firebase Storage so GIFs (and all images) are
+// served as real files — avoiding base64 bloat.
 const makeImageHandler = (quillInstance) => () => {
   const input = document.createElement('input')
   input.setAttribute('type', 'file')
@@ -947,14 +941,14 @@ const makeImageHandler = (quillInstance) => () => {
     const file = input.files[0]
     if (!file) return
 
-    // Try Supabase Storage first (preserves full GIF data)
+    // Try Firebase Storage first
     try {
       const url = await uploadImageToStorage(file)
       const range = quillInstance.getSelection(true)
       quillInstance.insertEmbed(range.index, 'image', url, 'user')
       quillInstance.setSelection(range.index + 1, 0)
     } catch (err) {
-      console.warn('Supabase Storage upload failed, falling back to data URL:', err.message)
+      console.warn('Appwrite Storage upload failed, falling back to data URL:', err.message)
       // Fallback: embed as data URL (works for small images)
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -967,19 +961,14 @@ const makeImageHandler = (quillInstance) => () => {
   }
 }
 
-
 // Helper: convert any YouTube URL to an embed URL
 const convertToYouTubeEmbed = (url) => {
   if (!url) return null
-  // Already an embed URL
   if (url.includes('youtube.com/embed/')) return url
-  // youtube.com/watch?v=ID
   let match = url.match(/[?&]v=([^&]+)/)
   if (match) return `https://www.youtube.com/embed/${match[1]}`
-  // youtu.be/ID
   match = url.match(/youtu\.be\/([^?]+)/)
   if (match) return `https://www.youtube.com/embed/${match[1]}`
-  // Return as-is for other embeddable URLs
   return url
 }
 
@@ -989,7 +978,6 @@ const initQuill = async () => {
   const el = document.getElementById('popup-quill-editor')
   if (!el) return
 
-  // If already initialized and attached to the DOM, just update content and return
   if (quillEditor && document.body.contains(quillEditor.root)) {
     if (profileForm.value.popup_content) {
       quillEditor.root.innerHTML = profileForm.value.popup_content
@@ -997,10 +985,8 @@ const initQuill = async () => {
     return
   }
 
-  // Clear any leftover elements inside the container
   el.innerHTML = ''
 
-  // Clean up any leftover sibling toolbar elements
   const siblingToolbars = el.parentNode.querySelectorAll('.ql-toolbar')
   siblingToolbars.forEach(tb => tb.remove())
 
@@ -1022,11 +1008,9 @@ const initQuill = async () => {
     }
   })
 
-  // Custom image handler – supports GIF
   const popupToolbar = quillEditor.getModule('toolbar')
   popupToolbar.addHandler('image', makeImageHandler(quillEditor))
 
-  // Custom YouTube video handler
   popupToolbar.addHandler('video', () => {
     const url = prompt('Paste a YouTube video URL:')
     const embedUrl = convertToYouTubeEmbed(url)
@@ -1048,16 +1032,13 @@ const initTarotQuill = async () => {
   const el = document.getElementById('tarot-quill-editor')
   if (!el) return
 
-  // If already initialized and attached to the DOM, just update content and return
   if (tarotQuillEditor && document.body.contains(tarotQuillEditor.root)) {
     tarotQuillEditor.root.innerHTML = projectForm.value.detailed_content_html || ''
     return
   }
 
-  // Clear any leftover elements inside the container
   el.innerHTML = ''
 
-  // Clean up any leftover sibling toolbar elements
   const siblingToolbars = el.parentNode.querySelectorAll('.ql-toolbar')
   siblingToolbars.forEach(tb => tb.remove())
 
@@ -1079,11 +1060,9 @@ const initTarotQuill = async () => {
     }
   })
 
-  // Custom image handler – supports GIF
   const tarotToolbar = tarotQuillEditor.getModule('toolbar')
   tarotToolbar.addHandler('image', makeImageHandler(tarotQuillEditor))
 
-  // Custom YouTube video handler
   tarotToolbar.addHandler('video', () => {
     const url = prompt('Paste a YouTube video URL:')
     const embedUrl = convertToYouTubeEmbed(url)
@@ -1132,13 +1111,15 @@ const showNotification = (text, type = 'success') => {
 const fetchProjects = async () => {
   loadingProjects.value = true
   try {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('id, title, description, detailed_content, detailed_content_html, project_images, link_url, card_back_image, created_at')
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    projects.value = data
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTIONS.PROJECTS,
+      [Query.orderDesc('created_at')]
+    )
+    projects.value = response.documents.map(doc => ({
+      id: doc.$id,
+      ...doc
+    }))
   } catch (err) {
     console.error('Error loading projects:', err)
     showNotification('Failed to load projects: ' + err.message, 'error')
@@ -1150,35 +1131,24 @@ const fetchProjects = async () => {
 const saveProject = async () => {
   submittingProject.value = true
   try {
+    const payload = {
+      title: projectForm.value.title,
+      description: projectForm.value.description,
+      detailed_content: projectForm.value.detailed_content,
+      link_url: projectForm.value.link_url,
+      card_back_image: projectForm.value.card_back_image || null,
+      updated_at: new Date().toISOString()
+    }
+    
     if (editingProject.value) {
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          title: projectForm.value.title,
-          description: projectForm.value.description,
-          detailed_content: projectForm.value.detailed_content,
-          link_url: projectForm.value.link_url,
-          card_back_image: projectForm.value.card_back_image
-        })
-        .eq('id', editingProject.value.id)
-        .select()
-
-      if (error) throw error
+      await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROJECTS, editingProject.value.id, payload)
       showNotification('Tarot card updated successfully!')
       cancelEditProject()
     } else {
-      const { data, error } = await supabase
-        .from('projects')
-        .insert([{
-          title: projectForm.value.title,
-          description: projectForm.value.description,
-          detailed_content: projectForm.value.detailed_content,
-          link_url: projectForm.value.link_url,
-          card_back_image: projectForm.value.card_back_image
-        }])
-        .select()
-
-      if (error) throw error
+      payload.created_at = new Date().toISOString()
+      payload.project_images = []
+      payload.detailed_content_html = ''
+      await databases.createDocument(DATABASE_ID, COLLECTIONS.PROJECTS, ID.unique(), payload)
       showNotification('Tarot card created and dealt!')
       resetProjectForm()
     }
@@ -1199,11 +1169,9 @@ const saveTarotRichContent = async () => {
   submittingProject.value = true
   try {
     const html = tarotQuillEditor.root.innerHTML
-    const { error } = await supabase
-      .from('projects')
-      .update({ detailed_content_html: html })
-      .eq('id', editingProject.value.id)
-    if (error) throw error
+    await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROJECTS, editingProject.value.id, {
+      detailed_content_html: html
+    })
     projectForm.value.detailed_content_html = html
     showNotification('Card content saved!')
     await fetchProjects()
@@ -1222,11 +1190,9 @@ const saveTarotImages = async () => {
   }
   submittingProject.value = true
   try {
-    const { error } = await supabase
-      .from('projects')
-      .update({ project_images: projectForm.value.project_images })
-      .eq('id', editingProject.value.id)
-    if (error) throw error
+    await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROJECTS, editingProject.value.id, {
+      project_images: projectForm.value.project_images
+    })
     showNotification('Gallery saved!')
     await fetchProjects()
   } catch (err) {
@@ -1237,7 +1203,7 @@ const saveTarotImages = async () => {
   }
 }
 
-const handleProjectImageUpload = (event) => {
+const handleProjectImageUpload = async (event) => {
   const files = Array.from(event.target.files)
   if (!files.length) return
 
@@ -1250,17 +1216,24 @@ const handleProjectImageUpload = (event) => {
     return true
   })
 
-  validFiles.forEach(file => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      if (!projectForm.value.project_images) projectForm.value.project_images = []
-      projectForm.value.project_images.push(e.target.result)
-    }
-    reader.readAsDataURL(file)
-  })
+  if (!validFiles.length) return
 
-  event.target.value = ''
-  if (validFiles.length) showNotification(`${validFiles.length} photo(s) added. Click "Save Gallery" to apply!`)
+  showNotification(`Uploading ${validFiles.length} photo(s)...`, 'info')
+  submittingProject.value = true
+  try {
+    for (const file of validFiles) {
+      const url = await uploadFileToStorage(file, 'projects')
+      if (!projectForm.value.project_images) projectForm.value.project_images = []
+      projectForm.value.project_images.push(url)
+    }
+    showNotification(`${validFiles.length} photo(s) uploaded. Click "Save Gallery" to apply!`)
+  } catch (err) {
+    console.error('Error uploading project images:', err)
+    showNotification('Failed to upload: ' + err.message, 'error')
+  } finally {
+    submittingProject.value = false
+    event.target.value = ''
+  }
 }
 
 const removeProjectImage = (idx) => {
@@ -1278,7 +1251,6 @@ const startEditProject = async (project) => {
     link_url: project.link_url || '',
     card_back_image: project.card_back_image || null
   }
-  // Re-init tarot quill with new content
   await nextTick()
   initTarotQuill()
 }
@@ -1303,7 +1275,7 @@ const resetProjectForm = () => {
   }
 }
 
-const handleCardBackUpload = (event) => {
+const handleCardBackUpload = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
@@ -1312,13 +1284,19 @@ const handleCardBackUpload = (event) => {
     return
   }
 
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    projectForm.value.card_back_image = e.target.result
-    showNotification('Custom card back loaded! Click "Deal Card" or "Update Card" to apply.', 'success')
+  submittingProject.value = true
+  try {
+    showNotification('Uploading card back...', 'info')
+    const url = await uploadFileToStorage(file, 'card-backs')
+    projectForm.value.card_back_image = url
+    showNotification('Custom card back uploaded! Click "Deal Card" or "Update Card" to apply.', 'success')
+  } catch (err) {
+    console.error('Error uploading card back:', err)
+    showNotification('Upload failed: ' + err.message, 'error')
+  } finally {
+    submittingProject.value = false
+    event.target.value = ''
   }
-  reader.readAsDataURL(file)
-  event.target.value = ''
 }
 
 const removeCardBackImage = () => {
@@ -1330,12 +1308,7 @@ const deleteProject = async (id) => {
   if (!confirm('Are you sure you want to return this card to the deck (delete)?')) return
 
   try {
-    const { error } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
+    await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROJECTS, id)
     showNotification('Tarot card removed.')
     if (editingProject.value && editingProject.value.id === id) {
       cancelEditProject()
@@ -1352,13 +1325,15 @@ const deleteProject = async (id) => {
 const fetchPartners = async () => {
   loadingPartners.value = true
   try {
-    const { data, error } = await supabase
-      .from('partners')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    partners.value = data
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTIONS.PARTNERS,
+      [Query.orderDesc('created_at')]
+    )
+    partners.value = response.documents.map(doc => ({
+      id: doc.$id,
+      ...doc
+    }))
   } catch (err) {
     console.error('Error loading partners:', err)
     showNotification('Failed to load partners: ' + err.message, 'error')
@@ -1372,30 +1347,16 @@ const savePartner = async () => {
   submittingPartner.value = true
   try {
     if (editingPartner.value) {
-      // Update
-      const { data, error } = await supabase
-        .from('partners')
-        .update({
-          name: partnerForm.value.name.trim()
-        })
-        .eq('id', editingPartner.value.id)
-        .select()
-
-      if (error) throw error
+      await databases.updateDocument(DATABASE_ID, COLLECTIONS.PARTNERS, editingPartner.value.id, {
+        name: partnerForm.value.name.trim()
+      })
       showNotification('Partner updated successfully!')
       cancelEditPartner()
     } else {
-      // Insert
-      const { data, error } = await supabase
-        .from('partners')
-        .insert([
-          {
-            name: partnerForm.value.name.trim()
-          }
-        ])
-        .select()
-
-      if (error) throw error
+      await databases.createDocument(DATABASE_ID, COLLECTIONS.PARTNERS, ID.unique(), {
+        name: partnerForm.value.name.trim(),
+        created_at: new Date().toISOString()
+      })
       showNotification('Partner added successfully!')
       resetPartnerForm()
     }
@@ -1430,12 +1391,7 @@ const deletePartner = async (id) => {
   if (!confirm('Are you sure you want to delete this partner?')) return
 
   try {
-    const { error } = await supabase
-      .from('partners')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
+    await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PARTNERS, id)
     showNotification('Partner deleted.')
     if (editingPartner.value && editingPartner.value.id === id) {
       cancelEditPartner()
@@ -1452,13 +1408,15 @@ const deletePartner = async (id) => {
 const fetchSocials = async () => {
   loadingSocials.value = true
   try {
-    const { data, error } = await supabase
-      .from('socials')
-      .select('*')
-      .order('sort_order', { ascending: true })
-
-    if (error) throw error
-    socials.value = data
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTIONS.SOCIALS,
+      [Query.orderAsc('sort_order')]
+    )
+    socials.value = response.documents.map(doc => ({
+      id: doc.$id,
+      ...doc
+    }))
   } catch (err) {
     console.error('Error loading socials:', err)
     showNotification('Failed to load socials: ' + err.message, 'error')
@@ -1471,33 +1429,18 @@ const saveSocial = async () => {
   if (!socialForm.value.platform.trim() || !socialForm.value.url.trim()) return
   submittingSocial.value = true
   try {
+    const payload = {
+      platform: socialForm.value.platform.trim(),
+      url: socialForm.value.url.trim(),
+      icon: socialForm.value.icon.trim() || '✦',
+      sort_order: Number(socialForm.value.sort_order) || 0
+    }
     if (editingSocial.value) {
-      const { error } = await supabase
-        .from('socials')
-        .update({
-          platform: socialForm.value.platform.trim(),
-          url: socialForm.value.url.trim(),
-          icon: socialForm.value.icon.trim() || '✦',
-          sort_order: socialForm.value.sort_order || 0
-        })
-        .eq('id', editingSocial.value.id)
-        .select()
-
-      if (error) throw error
+      await databases.updateDocument(DATABASE_ID, COLLECTIONS.SOCIALS, editingSocial.value.id, payload)
       showNotification('Social link updated successfully!')
       cancelEditSocial()
     } else {
-      const { error } = await supabase
-        .from('socials')
-        .insert([{
-          platform: socialForm.value.platform.trim(),
-          url: socialForm.value.url.trim(),
-          icon: socialForm.value.icon.trim() || '✦',
-          sort_order: socialForm.value.sort_order || 0
-        }])
-        .select()
-
-      if (error) throw error
+      await databases.createDocument(DATABASE_ID, COLLECTIONS.SOCIALS, ID.unique(), payload)
       showNotification('Social link added successfully!')
       resetSocialForm()
     }
@@ -1538,12 +1481,7 @@ const deleteSocial = async (id) => {
   if (!confirm('Are you sure you want to delete this social link?')) return
 
   try {
-    const { error } = await supabase
-      .from('socials')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
+    await databases.deleteDocument(DATABASE_ID, COLLECTIONS.SOCIALS, id)
     showNotification('Social link deleted.')
     if (editingSocial.value && editingSocial.value.id === id) {
       cancelEditSocial()
@@ -1560,57 +1498,56 @@ const deleteSocial = async (id) => {
 const fetchProfile = async () => {
   loadingProfile.value = true
   try {
-    const { data, error } = await supabase
-      .from('profile')
-      .select('*')
-      .eq('id', 1)
-      .single()
-
-    if (error) {
-      if (error.code !== 'PGRST116') {
-        throw error
-      }
-      // Set default inputs if table is empty
-      profileForm.value = {
-        greeting: 'Hi, my name is',
-        name: 'Siobhan Moors.',
-        pronunciation: 'pronounced [Shuh-vohn]',
-        bio: 'A short bio blurb about yourself goes here. Talk about your passion, what drives your creative work, and what makes you uniquely you.',
-        passport_image: null,
-        popup_content: '',
-        popup_images: []
-      }
-      profileTagsList.value = [
-        { text: 'Design', stamp: 'hexagon' },
-        { text: 'Dev', stamp: 'triangle' },
-        { text: 'Creative', stamp: 'oval' }
-      ]
-    } else if (data) {
-      profileForm.value = {
-        greeting: data.greeting || '',
-        name: data.name || '',
-        pronunciation: data.pronunciation || '',
-        bio: data.bio || '',
-        passport_image: data.passport_image || null,
-        popup_content: data.popup_content || '',
-        popup_images: data.popup_images || []
-      }
-      
-      // Parse tags
-      profileTagsList.value = []
-      if (data.tags) {
-        profileTagsList.value = data.tags.map(tStr => {
-          const parts = tStr.split(':')
-          return {
-            text: parts[0],
-            stamp: parts[1] || ''
-          }
-        })
-      }
+    const data = await databases.getDocument(DATABASE_ID, COLLECTIONS.PROFILE, '1')
+    profileForm.value = {
+      greeting: data.greeting || '',
+      name: data.name || '',
+      pronunciation: data.pronunciation || '',
+      bio: data.bio || '',
+      passport_image: data.passport_image || null,
+      popup_content: data.popup_content || '',
+      popup_images: data.popup_images || []
+    }
+    
+    profileTagsList.value = []
+    if (data.tags) {
+      profileTagsList.value = data.tags.map(tStr => {
+        const parts = tStr.split(':')
+        return {
+          text: parts[0],
+          stamp: parts[1] || ''
+        }
+      })
     }
   } catch (err) {
     console.error('Error loading profile:', err)
-    showNotification('Failed to load profile settings: ' + err.message, 'error')
+    if (err.code === 404) {
+      try {
+        const defaultProfile = {
+          greeting: 'Hi, my name is',
+          name: 'Siobhan Moors.',
+          pronunciation: 'pronounced [Shuh-vohn]',
+          bio: 'A short bio blurb about yourself goes here. Talk about your passion, what drives your creative work, and what makes you uniquely you.',
+          passport_image: null,
+          popup_content: '',
+          popup_images: [],
+          tags: ['Design:hexagon', 'Dev:triangle', 'Creative:oval']
+        }
+        await databases.createDocument(DATABASE_ID, COLLECTIONS.PROFILE, '1', defaultProfile)
+        
+        profileForm.value = { ...defaultProfile }
+        profileTagsList.value = [
+          { text: 'Design', stamp: 'hexagon' },
+          { text: 'Dev', stamp: 'triangle' },
+          { text: 'Creative', stamp: 'oval' }
+        ]
+      } catch (createErr) {
+        console.error('Error creating default profile:', createErr)
+        showNotification('Failed to initialize profile: ' + createErr.message, 'error')
+      }
+    } else {
+      showNotification('Failed to load profile settings: ' + err.message, 'error')
+    }
   } finally {
     loadingProfile.value = false
   }
@@ -1619,24 +1556,19 @@ const fetchProfile = async () => {
 const saveProfile = async () => {
   savingProfile.value = true
   try {
-    // Process profileTagsList into string array
     const tagsArray = profileTagsList.value
       .filter(t => t.text && t.text.trim())
       .map(t => `${t.text.trim()}:${t.stamp}`)
 
-    const { error } = await supabase
-      .from('profile')
-      .upsert({
-        id: 1,
-        greeting: profileForm.value.greeting,
-        name: profileForm.value.name,
-        pronunciation: profileForm.value.pronunciation,
-        bio: profileForm.value.bio,
-        tags: tagsArray,
-        passport_image: profileForm.value.passport_image
-      })
+    await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILE, '1', {
+      greeting: profileForm.value.greeting,
+      name: profileForm.value.name,
+      pronunciation: profileForm.value.pronunciation,
+      bio: profileForm.value.bio,
+      tags: tagsArray,
+      passport_image: profileForm.value.passport_image
+    })
 
-    if (error) throw error
     showNotification('Profile updated successfully!')
     await fetchProfile()
   } catch (err) {
@@ -1660,13 +1592,9 @@ const savePopupContent = async () => {
   savingPopup.value = true
   try {
     const html = quillEditor.root.innerHTML
-    const { error } = await supabase
-      .from('profile')
-      .upsert({
-        id: 1,
-        popup_content: html
-      })
-    if (error) throw error
+    await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILE, '1', {
+      popup_content: html
+    })
     profileForm.value.popup_content = html
     showNotification('Popup text saved!')
   } catch (err) {
@@ -1680,13 +1608,9 @@ const savePopupContent = async () => {
 const savePopupImages = async () => {
   savingPopup.value = true
   try {
-    const { error } = await supabase
-      .from('profile')
-      .upsert({
-        id: 1,
-        popup_images: profileForm.value.popup_images
-      })
-    if (error) throw error
+    await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILE, '1', {
+      popup_images: profileForm.value.popup_images
+    })
     showNotification('Gallery saved!')
   } catch (err) {
     console.error('Error saving popup images:', err)
@@ -1696,7 +1620,7 @@ const savePopupImages = async () => {
   }
 }
 
-const handlePopupImageUpload = (event) => {
+const handlePopupImageUpload = async (event) => {
   const files = Array.from(event.target.files)
   if (!files.length) return
 
@@ -1709,40 +1633,52 @@ const handlePopupImageUpload = (event) => {
     return true
   })
 
-  validFiles.forEach(file => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      if (!profileForm.value.popup_images) profileForm.value.popup_images = []
-      profileForm.value.popup_images.push(e.target.result)
-    }
-    reader.readAsDataURL(file)
-  })
+  if (!validFiles.length) return
 
-  // Reset input so same files can be re-added if needed
-  event.target.value = ''
-  if (validFiles.length) showNotification(`${validFiles.length} photo(s) added. Click "Save Gallery" to apply!`)
+  savingPopup.value = true
+  try {
+    showNotification(`Uploading ${validFiles.length} photo(s)...`, 'info')
+    for (const file of validFiles) {
+      const url = await uploadFileToStorage(file, 'profile-popup')
+      if (!profileForm.value.popup_images) profileForm.value.popup_images = []
+      profileForm.value.popup_images.push(url)
+    }
+    showNotification(`${validFiles.length} photo(s) uploaded. Click "Save Gallery" to apply!`)
+  } catch (err) {
+    console.error('Error uploading popup images:', err)
+    showNotification('Upload failed: ' + err.message, 'error')
+  } finally {
+    savingPopup.value = false
+    event.target.value = ''
+  }
 }
 
 const removePopupImage = (idx) => {
   profileForm.value.popup_images.splice(idx, 1)
 }
 
-const handleImageUpload = (event) => {
+const handleImageUpload = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  // Verify file size limit (20MB)
   if (file.size > 20 * 1024 * 1024) {
     showNotification('Photo must be smaller than 20MB', 'error')
     return
   }
 
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    profileForm.value.passport_image = e.target.result
-    showNotification('Photo uploaded to preview. Click "Save Profile" to apply!', 'success')
+  savingProfile.value = true
+  try {
+    showNotification('Uploading profile photo...', 'info')
+    const url = await uploadFileToStorage(file, 'profile')
+    profileForm.value.passport_image = url
+    showNotification('Photo uploaded. Click "Save Profile" to apply!', 'success')
+  } catch (err) {
+    console.error('Error uploading profile photo:', err)
+    showNotification('Upload failed: ' + err.message, 'error')
+  } finally {
+    savingProfile.value = false
+    event.target.value = ''
   }
-  reader.readAsDataURL(file)
 }
 
 const clearPassportImage = async () => {
@@ -1753,8 +1689,7 @@ const clearPassportImage = async () => {
 
 const handleLogout = async () => {
   try {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    await account.deleteSession('current')
     router.push('/admin/login')
   } catch (err) {
     console.error('Logout error:', err)

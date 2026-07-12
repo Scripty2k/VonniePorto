@@ -236,7 +236,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { supabase } from '../supabase.js'
+import { databases, DATABASE_ID, COLLECTIONS } from '../appwrite.js'
 import defaultPassport from '@/assets/images/passport.png'
 
 // Import Quill CSS so rich text renders properly
@@ -369,19 +369,8 @@ const closePopup = () => {
 
 const fetchProfile = async () => {
   try {
-    const { data, error } = await supabase
-      .from('profile')
-      .select('*')
-      .eq('id', 1)
-      .single()
-
-    if (error) {
-      if (error.code !== 'PGRST116') {
-        throw error
-      }
-    } else if (data) {
-      profile.value = data
-    }
+    const docSnap = await databases.getDocument(DATABASE_ID, COLLECTIONS.PROFILE, '1')
+    profile.value = docSnap
   } catch (err) {
     console.error('Error fetching profile:', err)
   }

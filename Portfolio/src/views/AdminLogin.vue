@@ -45,7 +45,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { supabase } from '../supabase.js'
+import { account } from '../appwrite.js'
 
 const email = ref('')
 const password = ref('')
@@ -58,12 +58,7 @@ const handleLogin = async () => {
   errorMessage.value = ''
   
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.value,
-      password: password.value
-    })
-    
-    if (error) throw error
+    await account.createEmailPasswordSession(email.value, password.value)
     
     // Redirect to Admin Dashboard on success
     router.push('/admin/dashboard')

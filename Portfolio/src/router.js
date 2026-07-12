@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { supabase } from './supabase.js'
+import { getCurrentUser } from './appwrite.js'
 import HomeView from './views/HomeView.vue'
 import ProjectDetailView from './views/ProjectDetailView.vue'
 import AdminLogin from './views/AdminLogin.vue'
@@ -51,8 +51,8 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   if (requiresAuth) {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
+    const user = await getCurrentUser()
+    if (!user) {
       next('/admin/login')
     } else {
       next()

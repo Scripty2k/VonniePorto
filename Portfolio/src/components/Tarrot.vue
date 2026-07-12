@@ -175,7 +175,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { supabase } from '../supabase.js'
+import { databases, DATABASE_ID, COLLECTIONS } from '../appwrite.js'
+import { Query } from 'appwrite'
 import 'quill/dist/quill.snow.css'
 
 // Import all card back images
@@ -260,13 +261,15 @@ const cardsVisible = ref(false)
 
 const fetchProjects = async () => {
   try {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('id, title, description, detailed_content, detailed_content_html, project_images, link_url, card_back_image, created_at')
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    projects.value = data
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTIONS.PROJECTS,
+      [Query.orderDesc('created_at')]
+    )
+    projects.value = response.documents.map(doc => ({
+      id: doc.$id,
+      ...doc
+    }))
   } catch (err) {
     console.error('Error fetching projects:', err)
   } finally {
